@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Spectral:wght@300;500&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Cinzel', serif;
+}
+
+/* 🔮 BACKGROUND */
+body {
+    background: url('charlesdeluvio-pcZvxrAyYoQ-unsplash.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: #e0e0e0;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+/* 🔹 MAIN CONTAINER */
+#container {
+    background: rgba(20, 20, 20, 0.9);
+    padding: 30px;
+    border-radius: 10px;
+    width: 350px;
+    box-shadow: 0 0 15px rgba(255, 204, 0, 0.3);
+    border: 1px solid #ffcc00;
+}
+
+/* 🔥 BUTTON STYLES (Matches Register Page) */
+.styled-button, .submit-button, .toggle-button {
+    background: #222;
+    color: #ffcc00;
+    border: 1px solid #ffcc00;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.3s ease-in-out;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.styled-button:hover, .submit-button:hover, .toggle-button:hover {
+    background: #ffcc00;
+    color: black;
+}
+
+/* 🔹 INPUT FIELDS */
+.input-field {
+    width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 2px solid #ffcc00;
+    border-radius: 8px;
+    font-size: 16px;
+    background: rgba(30, 30, 30, 0.9);
+    color: #ffcc00;
+    text-align: center;
+}
+
+/* 🔹 LOGO */
+.logo {
+    width: 100px;
+    margin: 0 auto 15px auto;
+    display: block;
+    filter: drop-shadow(0px 0px 10px rgba(255, 204, 0, 0.8));
+}
+
+/* 🔹 PAGE TITLE */
+.title {
+    color: #ffcc00;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+/* 🔹 LEADERBOARD & ANNOUNCEMENTS */
+#leaderboard, #announcements {
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 12px;
+    border-radius: 5px;
+    text-align: left;
+    display: none;
+    box-shadow: 0 0 12px rgba(255, 204, 0, 0.3);
+}
+
+#leaderboard ol {
+    list-style-type: decimal;
+    padding-left: 20px;
+}
+
+#leaderboard li {
+    font-size: 14px;
+    padding: 5px 0;
+}
+
+/* 🔹 HIDE ANNOUNCEMENTS & LEADERBOARD INITIALLY */
+.hidden {
+    display: block;
+}
+
+#announcements {
+    display: block !important;
+    color: white; /* Adjust color if needed */
+}

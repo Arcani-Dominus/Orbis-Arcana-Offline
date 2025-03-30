@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbis Arcana - Level</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="container">
+        <img src="Orbis Arcane.png" alt="Orbis Arcana Logo" class="logo">
+        <h1 class="title">Orbis Arcana</h1>
+        <h2 id="levelTitle">Level</h2>
+
+        <!-- 📜 Riddle Section -->
+        <p id="riddleText" class="riddle">Loading riddle...</p>
+        <input type="text" id="answerInput" class="input-field" placeholder="Enter your answer">
+        <button id="submitAnswer" class="submit-button">Submit</button>
+        <p id="feedback"></p>
+
+        <!-- 📢 Announcements Section -->
+        <p id="announcements">Loading announcements...</p>
+
+        <!-- 🏆 Leaderboard Section -->
+        <div id="leaderboard-section">
+            <button id="loadLeaderboardBtn" class="toggle-button">🏆 Show Leaderboard</button>
+            <div id="leaderboard" class="hidden">Loading leaderboard...</div>
+        </div>
+    </div>
+
+    <!-- ✅ JavaScript Code -->
+    <script type="module">
+        import { db, auth } from "./firebase-config.js";
+        import { getDoc, doc, collection, query, orderBy, getDocs, updateDoc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+        import { getRiddle, getAnswer, getAnnouncement } from "./levels.js";
+
+        async function loadRiddle() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const level = parseInt(urlParams.get("level")) || 2;
+
+            const riddleTextElement = document.getElementById("riddleText");
+            const levelTitleElement = document.getElementById("levelTitle");
+
+            if (!riddleTextElement || !levelTitleElement) {
+                console.warn("⚠ Riddle elements not found in HTML.");
+                return;
+            }
+
+            const riddleText = await getRiddle(level);
+            levelTitleElement.innerText = `Level ${level}`;
+            riddleTextElement.innerText = riddleText || "Riddle not found!";
+        }
+
+        async function submitAnswer() {
+            const user = auth.currentUser;
+            const feedback = document.getElementById("feedback");
+
+            if (!user) {
+                feedback.innerHTML = "<span style='color: red;'>Error: You need to log in first.</span>";
+                return;
+            }
+
+            const studentID = user.uid;
+            const urlParams = new URLSearchParams(window.location.search);
+            const level = parseInt(urlParams.get("level")) || 2;
+            const answerInput = document.getElementById("answerInput").value.trim().toLowerCase();
+
+            try {
+                const correctAnswer = await getAnswer(level);
+                
+                if (correctAnswer && answerInput === correctAnswer) {
+                    feedback.innerHTML = "<span class='success-text'>Correct! Proceeding to next level...</span>";
+                    const playerRef = doc(db, "players", studentID);
+                    await updateDoc(playerRef, { 
+                        level: level + 1,
+                        timestamp: serverTimestamp() // ✅ Auto-add timestamp when updating level
+                    });
+
+                    setTimeout(() => {
+                        window.location.href = `level.html?level=${level + 1}`;
+                    }, 2000);
+                } else {
+                    feedback.innerHTML = "<span style='color: red;'>Wrong answer! Try again.</span>";
+                }
+            } catch (error) {
+                console.error("❌ Error checking answer:", error);
+            }
+        }
+
+        // ✅ Updated loadLeaderboard Function
+        async function loadLeaderboard() {
+            try {
+                const leaderboardDiv = document.getElementById("leaderboard");
+                if (!leaderboardDiv) {
+                    console.error("❌ leaderboardDiv not found in HTML.");
+                    return;
+                }
+
+                leaderboardDiv.innerHTML = "<p>Loading...</p>";
+
+                const leaderboardQuery = query(
+                    collection(db, "players"),
+                    orderBy("level", "desc"),
+                    orderBy("timestamp", "asc"),
+                    limit(10) // ✅ Show only top 10 players
+                );
+
+                const querySnapshot = await getDocs(leaderboardQuery);
+
+                if (querySnapshot.empty) {
+                    leaderboardDiv.innerHTML = "<p>No players found.</p>";
+                    return;
+                }
+
+                let leaderboardHTML = "<ol>";
+                let rank = 1;
+
+                querySnapshot.forEach((doc) => {
+                    const player = doc.data();
+                    const playerName = player.name || "Unknown";
+                    const playerLevel = parseInt(player.level); // ✅ Ensure it's a number
+
+                    if (isNaN(playerLevel)) {
+                        console.warn(`⚠ Skipping invalid player entry:`, player);
+                        return; // ❌ Skip invalid players
+                    }
+
+                    leaderboardHTML += `<li>${playerName} - Level ${playerLevel}</li>`;
+
+                    rank++;
+                });
+
+                leaderboardHTML += "</ol>";
+                leaderboardDiv.innerHTML = leaderboardHTML;
+                leaderboardDiv.classList.remove("hidden");
+                leaderboardDiv.style.display = "block";
+            } catch (error) {
+                console.error("❌ Error loading leaderboard:", error);
+                document.getElementById("leaderboard").innerHTML = "<p>Error loading leaderboard.</p>";
+            }
+        }
+
+        // ✅ Toggle Leaderboard Visibility
+        document.getElementById("loadLeaderboardBtn").addEventListener("click", () => {
+            const leaderboardDiv = document.getElementById("leaderboard");
+
+            if (leaderboardDiv.style.display === "none" || leaderboardDiv.classList.contains("hidden")) {
+                loadLeaderboard(); // ✅ Load when shown
+                leaderboardDiv.classList.remove("hidden");
+                leaderboardDiv.style.display = "block";
+            } else {
+                leaderboardDiv.classList.add("hidden");
+                leaderboardDiv.style.display = "none"; // ✅ Hide leaderboard when clicked again
+            }
+        });
+
+        // ✅ Load Announcements on Page Load
+        async function loadAnnouncements() {
+            const announcementElement = document.getElementById("announcements");
+            if (!announcementElement) {
+                console.warn("⚠ Announcements element not found.");
+                return;
+            }
+            const announcementText = await getAnnouncement();
+            announcementElement.innerText = announcementText;
+        }
+
+        // ✅ Attach Events on Page Load
+        document.addEventListener("DOMContentLoaded", () => {
+            loadRiddle();
+            loadAnnouncements();
+
+            const submitButton = document.getElementById("submitAnswer");
+            if (submitButton) {
+                submitButton.addEventListener("click", submitAnswer);
+            }
+        });
+
+    </script>
+</body>
+</html>

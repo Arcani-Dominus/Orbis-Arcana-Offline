@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbis Arcana - Waiting Room</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="container">
+        <h1 class="title">Orbis Arcana</h1>
+        <p>🔮 A new challenge is coming soon. Stay tuned!</p>
+        <p id="status">Checking for new levels...</p>
+
+        <!-- 📢 Announcements Section -->
+        <div id="announcements-section">
+            <p id="announcements">Loading announcements...</p>
+        </div>
+    </div>
+
+    <script type="module">
+    import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+    import { db } from "./firebase-config.js";
+    import { auth } from "./firebase-config.js";
+    import { signOut } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const lastLevel = parseInt(urlParams.get("level")) || 2;
+    const nextLevel = lastLevel + 1;
+
+    async function checkForNewLevels() {
+        console.log("🔍 Checking for new levels in Firestore...");
+        try {
+            const levelRef = doc(db, "answers", nextLevel.toString());
+            const levelSnap = await getDoc(levelRef);
+
+            if (levelSnap.exists()) {
+                console.log("🎉 New level found! Redirecting...");
+                window.location.href = `level.html?level=${nextLevel}`;
+            } else {
+                document.getElementById("status").innerText = "No new levels yet. Keep waiting...";
+            }
+        } catch (error) {
+            console.error("❌ Error fetching level from Firestore:", error);
+        }
+    }
+
+    // ✅ Check Every 3 Seconds
+    setInterval(checkForNewLevels, 3000);
+
+    // 🔹 ANNOUNCEMENTS SYSTEM FROM FIRESTORE
+    async function loadAnnouncements() {
+        try {
+            const announcementRef = doc(db, "announcements", "latest");
+            const announcementSnap = await getDoc(announcementRef);
+
+            if (announcementSnap.exists()) {
+                document.getElementById("announcements").innerText = announcementSnap.data().message;
+            } else {
+                document.getElementById("announcements").innerText = "No announcements available.";
+            }
+        } catch (error) {
+            console.error("❌ Error loading announcements from Firestore:", error);
+            document.getElementById("announcements").innerText = "Failed to load announcements.";
+        }
+    }
+
+    // ✅ Load announcements on page load
+    loadAnnouncements();
+
+    // ✅ LOGOUT AFTER 1 MINUTE (TESTING)
+    function startLogoutTimer() {
+        console.log("⏳ Logout countdown started (1 min)...");
+
+        setTimeout(async () => {
+            console.log("🔴 Logging out due to inactivity...");
+            await signOut(auth);
+            window.location.href = "login.html"; // ✅ Redirect to login
+        }, 60 * 1000); // ⏳ 1 minute
+    }
+
+    // ✅ Start the logout timer when the user reaches the waiting page
+    startLogoutTimer();
+</script>
+
+</body>
+</html>

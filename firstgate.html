@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbis Arcana - Solve the Riddle</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: url('charlesdeluvio-pcZvxrAyYoQ-unsplash.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #e0e0e0;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 10px;
+        }
+        #container {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 75%;
+            min-width: 280px;
+        }
+        .title { color: #ffcc00; font-size: 28px; font-weight: bold; }
+        input, button { margin-top: 10px; padding: 8px; font-size: 14px; width: 80%; }
+        button { background: #222; color: #ffcc00; border: 2px solid #ffcc00; cursor: pointer; }
+        button:hover { background: #ffcc00; color: black; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1 class="title">Orbis Arcana</h1>
+        <h2>The First Gate</h2>
+
+        <p>"I have no substance, yet I follow you close. I vanish in darkness but thrive in the glow. What am I?"</p>
+        
+        <input type="text" id="answerInput" placeholder="Your answer...">
+        <button onclick="checkAnswer()">Submit</button>
+
+        <p id="result"></p>
+    </div>
+
+    <script>
+        function checkAnswer() {
+            const answer = document.getElementById("answerInput").value.toLowerCase().trim();
+            const result = document.getElementById("result");
+
+            if (answer === "shadow") {
+                result.innerHTML = "<span style='color: #66ffcc;'>Correct! Proceeding to registration...</span>";
+                setTimeout(() => window.location.href = "register.html", 2000);
+            } else {
+                result.innerHTML = "<span style='color: red;'>Incorrect. Try again.</span>";
+            }
+        }
+    </script>
+</body>
+</html>

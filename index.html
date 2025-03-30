@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbis Arcana - The Beginning</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            text-align: center;
+            background: url('charlesdeluvio-pcZvxrAyYoQ-unsplash.jpg') no-repeat center center fixed;
+            background-size: cover;
+            color: #ffffff;
+            padding: 20px;
+            margin: 0;
+        }
+        #container {
+            width: 90%;
+            max-width: 1000px;
+            margin: auto;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.3);
+        }
+        h1 { font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #ffcc00;
+        }
+        h2 {
+            color: #ffaa00;
+        }
+        .rules {
+            text-align: left;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            line-height: 1.8;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li { font-size: 1em;
+        }
+        .input-container {
+            margin-top: 30px;
+        }
+        #agreeInput { font-size: 1em;
+            width: 60%;
+            text-align: center;
+            border-radius: 5px;
+            border: none;
+            outline: none;
+        }
+        .start-button { font-size: 1.1em;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: 0.3s;
+            display: none;
+        }
+        .start-button:hover {
+            background: #ffaa00;
+            transform: scale(1.05);
+        }
+        .warning {
+            color: red;
+            margin-top: 12px;
+            font-size: 1em;
+        }
+        .logo {
+            width: 180px;
+            height: auto;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <img src="Orbis Arcane.png" alt="Orbis Arcana Logo" class="logo">
+        <h1>Orbis Arcana - The Beginning</h1>
+        <p>Welcome, Seeker. You have entered a world where only the clever and the bold shall pass.</p>
+        <p>This is not just a game—it is a test of wisdom, wit, and perception.</p>
+
+        <div class="rules">
+            <h2>📜 Rules of the Arcana</h2>
+            <ul>
+                <li>🔍 <b>Solve the Riddles</b> - Each gate requires a correct answer to proceed.</li>
+                <li>⏳ <b>Patience is Key</b> - If a level is not yet available, wait for new challenges.</li>
+                <li>🤝 <b>No Sharing Answers</b> - The journey must be taken alone.</li>
+                <li>⚔ <b>Beware of False Clues</b> - Not all hints are what they seem.</li>
+                <li>🏆 <b>Only the Worthy Advance</b> - There are no shortcuts.</li>
+                <li>🚨 <b>Clues Must Not Be Tampered With</b> - Any attempt to <b>destroy, move, or tamper</b> with the clues placed in different locations <b>will lead to disqualification</b> if found guilty.</li>
+            </ul>
+        </div>
+
+        <div class="input-container">
+            <p>To proceed, type "<b>I Agree</b>" below and press Enter:</p>
+            <input type="text" id="agreeInput" placeholder="Type here..." oninput="checkAgreement()">
+            <p class="warning" id="warningText"></p>
+        </div>
+
+        <button class="start-button" id="startGame">🔑 Begin Your Journey</button>
+    </div>
+
+    <script>
+        function checkAgreement() {
+            const input = document.getElementById("agreeInput").value.trim().toLowerCase();
+            const button = document.getElementById("startGame");
+            const warningText = document.getElementById("warningText");
+
+            if (input === "i agree") {
+                button.style.display = "block";
+                warningText.innerText = "";
+            } else {
+                button.style.display = "none";
+                warningText.innerText = "You must type 'I Agree' exactly to continue.";
+            }
+        }
+
+        document.getElementById("startGame").addEventListener("click", function() {
+            localStorage.setItem("hasAgreed", "true");
+            window.location.href = "firstgate.html";
+        });
+    </script>
+</body>
+</html>

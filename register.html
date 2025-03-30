@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Orbis Arcana</title>
+    <link rel="stylesheet" href="styles.css"> <!-- ✅ Apply game theme styles -->
+    <script type="module" src="register.js"></script>
+</head>
+<body>
+    <div id="container">
+        <img src="Orbis Arcane.png" alt="Orbis Arcana Logo" class="logo">
+        <h1 class="title">Orbis Arcana</h1>
+        <h2 class="subtitle">Register to Begin Your Journey</h2>
+
+        <!-- 🔹 Input Fields -->
+        <div class="input-container">
+            <input type="text" id="name" class="input-field" placeholder="Enter your name">
+            <input type="text" id="studentID" class="input-field" placeholder="Enter your Student ID"> <!-- ✅ Added Student ID Field -->
+            <input type="email" id="email" class="input-field" placeholder="Enter your email">
+            <input type="password" id="password" class="input-field" placeholder="Enter your password">
+            <button id="registerBtn" class="submit-button">Register</button>
+        </div>
+
+        <p id="result"></p>
+
+        <p class="switch-page">Already have an account? <a href="login.html">Login here</a></p>
+    </div>
+</body>
+</html>
