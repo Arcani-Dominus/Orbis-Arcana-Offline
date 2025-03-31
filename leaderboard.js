@@ -3,7 +3,7 @@ import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.
 
 const leaderboardElement = document.getElementById("leaderboard");
 const leaderboardButton = document.getElementById("loadLeaderboardBtn");
-let leaderboardVisible = false; // ✅ Track visibility
+let leaderboardVisible = false;  // ✅ Track visibility
 
 // ✅ Load Top 10 Teams from Firestore
 async function loadLeaderboard() {
@@ -15,13 +15,12 @@ async function loadLeaderboard() {
     }
 
     try {
-        // ✅ Query the "teams" collection, sort by level and timestamp, limit to 10
         const leaderboardRef = collection(db, "teams");
         const q = query(
             leaderboardRef, 
-            orderBy("currentLevel", "desc"),          // Sort by highest level
-            orderBy("lastAnswerTimestamp", "asc"),   // Tie-breaker by timestamp
-            limit(10)                                // Top 10 only
+            orderBy("currentLevel", "desc"),        // Sort by highest level
+            orderBy("lastAnswerTimestamp", "asc"), // Tie-breaker by timestamp
+            limit(10)                              // Top 10 only
         );
 
         const snapshot = await getDocs(q);
@@ -36,12 +35,12 @@ async function loadLeaderboard() {
         let count = 0;
 
         snapshot.forEach((doc) => {
-            if (count >= 10) return; // ✅ Ensure only 10 teams are shown
+            if (count >= 10) return;  // ✅ Ensure only 10 teams are shown
 
             const team = doc.data();
 
-            // ✅ Validate team data
-            const teamName = team.name || "Unknown Team";
+            // ✅ Use 'teamName' from Firestore
+            const teamName = team.teamName || "Unknown Team";
             const level = team.currentLevel || 0;
 
             leaderboardHTML += `<li>#${count + 1} ${teamName} (Level ${level})</li>`;
@@ -66,7 +65,7 @@ async function loadLeaderboard() {
 // 🔹 Toggle leaderboard visibility
 leaderboardButton.addEventListener("click", async () => {
     if (!leaderboardVisible) {
-        await loadLeaderboard();    // ✅ Fetch only when opening
+        await loadLeaderboard();     // ✅ Fetch only when opening
         leaderboardElement.style.display = "block";
     } else {
         leaderboardElement.style.display = "none";
