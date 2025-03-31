@@ -5,16 +5,18 @@ import { setDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs
 // ✅ Wait for DOM to load before attaching event listeners
 document.addEventListener("DOMContentLoaded", () => {
 
-    const registerBtn = document.getElementById("registerBtn");
+    const registerForm = document.getElementById("registerForm");
     const result = document.getElementById("result");
 
-    if (!registerBtn) {
-        console.error("❌ Register button not found.");
+    if (!registerForm) {
+        console.error("❌ Register form not found.");
         return;
     }
 
-    // ✅ Attach the click event listener after DOM is fully loaded
-    registerBtn.addEventListener("click", async () => {
+    // ✅ Handle form submission
+    registerForm.addEventListener("submit", async (event) => {
+        event.preventDefault();  // 🔥 Prevent page refresh
+
         // 🔹 Get Form Values
         const teamName = document.getElementById("teamName").value.trim();
         const members = document.getElementById("members").value.trim();
@@ -22,16 +24,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const password = document.getElementById("password").value.trim();
 
         if (!teamName || !members || !email || !password) {
-            result.innerHTML = `<span style='color: red;'>Please enter all details.</span>`;
+            result.innerHTML = `<span style='color: red;'>Please fill all fields.</span>`;
             return;
         }
 
         try {
-            // 🔥 Register the Team with Firebase Authentication
+            // ✅ Register team with Firebase Authentication
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
-            // 🔥 Store team data in Firestore with registration timestamp
+            console.log("✅ Account created:", user.uid);
+
+            // ✅ Store team data in Firestore
             await setDoc(doc(db, "teams", user.uid), {
                 teamName: teamName,
                 members: members.split(',').map(name => name.trim()),  // ✅ Store members as an array
@@ -40,16 +44,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 createdAt: serverTimestamp() // ✅ Store registration timestamp
             });
 
-            // ✅ Store UID in localStorage for tracking during gameplay
+            console.log("✅ Team data stored in Firestore:", user.uid);
+
+            // ✅ Store UID in localStorage
             localStorage.setItem("teamId", user.uid);
             localStorage.setItem("teamName", teamName);
 
             result.innerHTML = `<span class='success-text'>Registration successful! Redirecting...</span>`;
 
-            // 🔹 Redirect to the game page after registration
+            // ✅ Delay redirection to ensure Firestore write is complete
             setTimeout(() => {
-                window.location.href = "level.html";  // ✅ Redirect to game
-            }, 2000);
+                console.log("🔄 Redirecting to level.html...");
+                window.location.href = "level.html";
+            }, 2000);  // ✅ Slight delay for stability
 
         } catch (error) {
             console.error("❌ Registration failed:", error);
@@ -58,11 +65,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ✅ Background music setup
-    const audio = new Audio("theme-music.mp3");  // 🔥 Use the background sound
-    audio.loop = true;                           // ✅ Loop the music continuously
-    audio.volume = 0.4;                          // 🎵 Set moderate volume
-    audio.play().catch((error) => {
-        console.warn("⚠️ Audio autoplay blocked:", error);
-    });
+    const audio = new Audio("theme-music.mp3");  // 🔥 Use background sound
+    audio.loop = true;                           // ✅ Loop continuously
+    audio.volume = 0.4;                          // 🎵 Moderate volume
 
+    // ✅ Handle autoplay restrictions
+    document.addEventListener('click', () => {
+        audio.play().catch((error) => {
+            console.warn("⚠️ Audio autoplay blocked:", error);
+        });
+    });
 });
