@@ -1,95 +1,68 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
-import { getDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+import { getDocs, collection, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-// ✅ Function to get a random riddle
-export async function getRiddle() {
+// ✅ Fetch a random riddle from the Firestore "riddles" collection
+async function getRandomRiddle() {
     try {
-        const riddlesRef = doc(db, "riddles", "all");
-        const riddlesSnap = await getDoc(riddlesRef);
+        const riddlesRef = collection(db, "riddles");
+        const snapshot = await getDocs(riddlesRef);
 
-        if (!riddlesSnap.exists()) {
+        if (snapshot.empty) {
             console.warn("⚠️ No riddles found in Firestore.");
             return null;
         }
 
-        const riddles = riddlesSnap.data().riddles || [];
-        if (riddles.length === 0) return null;
+        const riddles = [];
+        snapshot.forEach((doc) => {
+            riddles.push({
+                id: doc.id,
+                riddle: doc.data().riddle,
+                answer: doc.data().answer.toLowerCase()
+            });
+        });
 
+        // ✅ Pick a random riddle
         const randomIndex = Math.floor(Math.random() * riddles.length);
         return riddles[randomIndex];
+
     } catch (error) {
-        console.error("❌ Firestore error while fetching riddle:", error);
+        console.error("❌ Firestore error while fetching random riddle:", error);
         return null;
     }
 }
 
-// ✅ Function to fetch the correct answer for the current level
-export async function getAnswer(level) {
-    try {
-        const levelRef = doc(db, "answers", level.toString());
-        const levelSnap = await getDoc(levelRef);
-
-        if (levelSnap.exists()) {
-            return levelSnap.data().answer.toLowerCase();
-        } else {
-            console.warn(`⚠️ No answer found for Level ${level}`);
-            return null;
-        }
-    } catch (error) {
-        console.error("❌ Firestore error while fetching answer:", error);
-        return null;
-    }
-}
-
-// ✅ Function to load announcements
-export async function getAnnouncement() {
-    try {
-        const announcementRef = doc(db, "announcements", "latest");
-        const announcementSnap = await getDoc(announcementRef);
-
-        if (announcementSnap.exists()) {
-            return announcementSnap.data().message;
-        } else {
-            console.warn("⚠️ No announcement found in Firestore.");
-            return "No announcements available.";
-        }
-    } catch (error) {
-        console.error("❌ Firestore error while fetching announcement:", error);
-        return "Error loading announcements.";
-    }
-}
-
-// ✅ Function to submit the answer and store the timestamp
+// ✅ Function to submit the answer and validate it
 async function submitAnswer() {
     const feedback = document.getElementById("feedback");
+    const teamId = localStorage.getItem("teamId");  
 
-    const teamId = localStorage.getItem("teamId");  // ✅ Retrieve the team ID from localStorage
     if (!teamId) {
         feedback.innerHTML = `<span style='color: red;'>Error: Team not found.</span>`;
         return;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentLevel = parseInt(urlParams.get("level")) || 1;
     const answerInput = document.getElementById("answerInput").value.trim().toLowerCase();
 
     try {
-        const correctAnswer = await getAnswer(currentLevel);
+        const riddle = await getRandomRiddle();
+        if (!riddle) {
+            feedback.innerHTML = `<span style='color: red;'>No riddle available. Try again later.</span>`;
+            return;
+        }
 
-        if (correctAnswer && answerInput === correctAnswer) {
+        if (answerInput === riddle.answer) {
             feedback.innerHTML = `<span class='success-text'>✅ Correct! Proceeding to next level...</span>`;
-            
+
             const teamRef = doc(db, "teams", teamId);
 
-            // ✅ Update Firestore: level progression and timestamp
+            // ✅ Update Firestore with new level progression
             await updateDoc(teamRef, {
-                level: currentLevel + 1,
-                lastAnswerTimestamp: serverTimestamp()  // ✅ Store submission timestamp
+                lastAnswerTimestamp: serverTimestamp() 
             });
 
             setTimeout(() => {
-                window.location.href = `level.html?level=${currentLevel + 1}`;
+                window.location.href = `level.html`;
             }, 2000);
 
         } else {
@@ -112,43 +85,21 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        const teamRef = doc(db, "teams", teamId);
-        const teamSnap = await getDoc(teamRef);
-
-        if (teamSnap.exists()) {
-            const lastLevel = teamSnap.data().level || 1;
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentLevel = parseInt(urlParams.get("level")) || 1;
-
-            if (lastLevel !== currentLevel) {
-                console.log(`🔄 Redirecting to correct level: ${lastLevel}`);
-                window.location.href = `level.html?level=${lastLevel}`;
-            } else {
-                console.log(`✅ Already on the correct level: ${currentLevel}`);
-                const riddle = await getRiddle();
-                if (!riddle) {
-                    console.warn("⚠ No riddle found. Redirecting to waiting page...");
-                    window.location.href = `waiting.html?level=${currentLevel}`;
-                }
-            }
+        const riddle = await getRandomRiddle();
+        if (riddle) {
+            console.log(`🧩 Riddle: ${riddle.riddle}`);
+            document.getElementById("riddle").innerText = riddle.riddle;
         }
     }
 });
 
 // ✅ Attach Submit Button Event
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
     const submitButton = document.getElementById("submitAnswer");
     if (submitButton) {
         submitButton.addEventListener("click", submitAnswer);
     } else {
         console.warn("⚠ Submit button not found in HTML.");
-    }
-
-    // ✅ Load Announcements
-    const announcementElement = document.getElementById("announcements");
-    if (announcementElement) {
-        const announcementText = await getAnnouncement();
-        announcementElement.innerText = announcementText;
     }
 });
 
