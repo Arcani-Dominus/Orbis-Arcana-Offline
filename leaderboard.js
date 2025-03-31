@@ -5,8 +5,9 @@ const leaderboardElement = document.getElementById("leaderboard");
 const leaderboardButton = document.getElementById("loadLeaderboardBtn");
 let leaderboardVisible = false; // ✅ Track visibility
 
+// ✅ Load Top 10 Teams from Firestore
 async function loadLeaderboard() {
-    console.log("📌 Fetching top 10 players...");
+    console.log("📌 Fetching top 10 teams...");
 
     if (!leaderboardElement) {
         console.error("❌ Leaderboard element not found in the DOM.");
@@ -14,38 +15,43 @@ async function loadLeaderboard() {
     }
 
     try {
-        const leaderboardRef = collection(db, "players");
-        const q = query(leaderboardRef, orderBy("level", "desc"), orderBy("timestamp", "asc"), limit(10)); // ✅ Strict limit to top 10
+        // ✅ Query the "teams" collection, sort by level and timestamp, limit to 10
+        const leaderboardRef = collection(db, "teams");
+        const q = query(
+            leaderboardRef, 
+            orderBy("currentLevel", "desc"),          // Sort by highest level
+            orderBy("lastAnswerTimestamp", "asc"),   // Tie-breaker by timestamp
+            limit(10)                                // Top 10 only
+        );
+
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
-            console.warn("⚠ No players found in Firestore.");
-            leaderboardElement.innerHTML = "<p>No players yet.</p>";
+            console.warn("⚠ No teams found in Firestore.");
+            leaderboardElement.innerHTML = "<p>No teams yet.</p>";
             return;
         }
 
-        let leaderboardHTML = "<h3>🏆 Top 10 Players</h3><ol>";
+        let leaderboardHTML = "<h3>🏆 Top 10 Teams</h3><ol>";
         let count = 0;
 
         snapshot.forEach((doc) => {
-            if (count >= 10) return; // ✅ Ensure only 10 players are shown
+            if (count >= 10) return; // ✅ Ensure only 10 teams are shown
 
-            const player = doc.data();
+            const team = doc.data();
 
-            // ✅ Check if name and level are valid
-            if (!player.name?.trim() || !player.level || isNaN(player.level)) {
-                console.warn("⚠ Skipping invalid player:", player);
-                return; // ❌ Skip empty or invalid players
-            }
+            // ✅ Validate team data
+            const teamName = team.name || "Unknown Team";
+            const level = team.currentLevel || 0;
 
-            leaderboardHTML += `<li>#${count + 1} ${player.name} (Level ${player.level})</li>`;
+            leaderboardHTML += `<li>#${count + 1} ${teamName} (Level ${level})</li>`;
             count++;
         });
 
         leaderboardHTML += "</ol>";
 
         if (count === 0) {
-            leaderboardElement.innerHTML = "<p>No valid players found.</p>";
+            leaderboardElement.innerHTML = "<p>No valid teams found.</p>";
         } else {
             leaderboardElement.innerHTML = leaderboardHTML;
         }
@@ -60,10 +66,10 @@ async function loadLeaderboard() {
 // 🔹 Toggle leaderboard visibility
 leaderboardButton.addEventListener("click", async () => {
     if (!leaderboardVisible) {
-        await loadLeaderboard(); // ✅ Fetch only when opening
+        await loadLeaderboard();    // ✅ Fetch only when opening
         leaderboardElement.style.display = "block";
     } else {
         leaderboardElement.style.display = "none";
     }
-    leaderboardVisible = !leaderboardVisible; // ✅ Toggle visibility state
+    leaderboardVisible = !leaderboardVisible;    // ✅ Toggle visibility state
 });
