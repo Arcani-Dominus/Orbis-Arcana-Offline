@@ -2,8 +2,17 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
 import { 
-    getDocs, collection, doc, updateDoc, serverTimestamp, getDoc 
+    getDocs, collection, doc, updateDoc, serverTimestamp, getDoc, 
+    disableNetwork, enableNetwork 
 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+
+const feedback = document.getElementById("feedback");
+const answerInput = document.getElementById("answerInput");
+
+// ✅ Show loading indicator
+function showLoadingIndicator(message = "⏳ Checking answer...") {
+    feedback.innerHTML = `<span style="color: blue;">${message}</span>`;
+}
 
 // ✅ Fetch a random riddle from Firestore, ensuring no duplicates
 export async function getRandomRiddle() {
@@ -51,26 +60,38 @@ export async function getRandomRiddle() {
     }
 }
 
-// ✅ Function to submit the answer and validate it
+// ✅ Function to submit the answer and validate it with cache bypass
 export async function submitAnswer() {
-    const feedback = document.getElementById("feedback");
     const teamId = localStorage.getItem("teamId");  
 
     if (!teamId) {
-        feedback.innerHTML = `<span style='color: red;'>Error: Team not found.</span>`;
+        feedback.innerHTML = `<span style='color: red;'>❌ Error: Team not found.</span>`;
         return;
     }
 
-    const answerInput = document.getElementById("answerInput").value.trim().toLowerCase();
+    const answer = answerInput.value.trim().toLowerCase();
+    
+    if (!answer) {
+        feedback.innerHTML = `<span style="color: red;">⚠️ Please enter an answer.</span>`;
+        return;
+    }
+
+    // ⏳ Show loading indicator
+    showLoadingIndicator();
+
+    // 🔥 Force Firestore to fetch fresh data (bypass cache)
+    await disableNetwork(db);
 
     try {
         const riddle = await getRandomRiddle();
+        
         if (!riddle) {
             feedback.innerHTML = `<span style='color: red;'>No riddle available. Try again later.</span>`;
+            await enableNetwork(db);  // Re-enable cache
             return;
         }
 
-        if (answerInput === riddle.answer) {
+        if (answer === riddle.answer) {
             feedback.innerHTML = `<span class='success-text'>✅ Correct! Proceeding to next level...</span>`;
 
             const teamRef = doc(db, "teams", teamId);
@@ -107,9 +128,13 @@ export async function submitAnswer() {
         } else {
             feedback.innerHTML = `<span style='color: red;'>❌ Wrong answer! Try again.</span>`;
         }
+
     } catch (error) {
         console.error("❌ Error submitting answer:", error);
         feedback.innerHTML = `<span style="color: red;">❌ Error submitting answer. Try again.</span>`;
+    } finally {
+        // 🔥 Re-enable cache after submission
+        await enableNetwork(db);
     }
 }
 
