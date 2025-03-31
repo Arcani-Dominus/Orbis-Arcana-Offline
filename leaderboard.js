@@ -1,16 +1,9 @@
 import { db } from "./firebase-config.js";
 import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-// ✅ Get DOM elements safely
 const leaderboardElement = document.getElementById("leaderboard");
 const leaderboardButton = document.getElementById("loadLeaderboardBtn");
-
-if (!leaderboardElement || !leaderboardButton) {
-    console.error("❌ Leaderboard or button not found in DOM.");
-    alert("Leaderboard element missing in HTML!");
-}
-
-let leaderboardVisible = false; // ✅ Track visibility
+let leaderboardVisible = false;  // ✅ Track visibility
 
 // ✅ Load Top 10 Teams from Firestore
 async function loadLeaderboard() {
@@ -22,13 +15,13 @@ async function loadLeaderboard() {
     }
 
     try {
-        // ✅ Query the "teams" collection
+        // ✅ Query the "teams" collection, sorting by currentLevel and lastAnswerTimestamp
         const leaderboardRef = collection(db, "teams");
         const q = query(
             leaderboardRef,
             orderBy("currentLevel", "desc"),         // Sort by highest level
-            orderBy("lastAnswerTimestamp", "asc"),   // Tie-breaker by timestamp
-            limit(10)                                // Top 10 teams
+            orderBy("lastAnswerTimestamp", "asc"),  // Tie-breaker by timestamp
+            limit(10)                               // Top 10 teams
         );
 
         const snapshot = await getDocs(q);
@@ -43,10 +36,12 @@ async function loadLeaderboard() {
         let count = 0;
 
         snapshot.forEach((doc) => {
-            const team = doc.data();
-            console.log(`📌 Team ${count + 1}:`, team);
+            if (count >= 10) return;  // ✅ Ensure only 10 teams are displayed
 
-            // ✅ Ensure valid team data
+            const team = doc.data();
+            console.log("📌 Team Data:", team);   // ✅ Debugging log
+
+            // ✅ Display team name and level
             const teamName = team.teamName || "Unknown Team";
             const level = team.currentLevel || 0;
 
@@ -55,17 +50,13 @@ async function loadLeaderboard() {
         });
 
         leaderboardHTML += "</ol>";
-
-        if (count === 0) {
-            leaderboardElement.innerHTML = "<p>No valid teams found.</p>";
-        } else {
-            leaderboardElement.innerHTML = leaderboardHTML;
-        }
+        leaderboardElement.innerHTML = leaderboardHTML;
 
         console.log("✅ Leaderboard updated successfully!");
+
     } catch (error) {
-        console.error("❌ Firestore error while loading leaderboard:", error);
-        leaderboardElement.innerHTML = `<p>Error loading leaderboard: ${error.message}</p>`;
+        console.error("❌ Error loading leaderboard:", error);
+        leaderboardElement.innerHTML = "<p>Error loading leaderboard.</p>";
     }
 }
 
