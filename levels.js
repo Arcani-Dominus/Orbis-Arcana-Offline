@@ -2,9 +2,11 @@
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
 import { 
-    getDocs, collection, doc, updateDoc, serverTimestamp, getDoc, 
-    disableNetwork, enableNetwork 
+    getDocs, collection, doc, updateDoc, serverTimestamp, getDoc
 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+
+// ✅ Cache the loaded riddle globally
+let currentRiddle = null;
 
 const feedback = document.getElementById("feedback");
 const answerInput = document.getElementById("answerInput");
@@ -14,8 +16,8 @@ function showLoadingIndicator(message = "⏳ Checking answer...") {
     feedback.innerHTML = `<span style="color: blue;">${message}</span>`;
 }
 
-// ✅ Fetch a random riddle from Firestore, ensuring no duplicates
-export async function getRandomRiddle() {
+// ✅ Fetch and cache a random riddle ONCE on page load
+export async function loadRiddle() {
     try {
         const riddlesRef = collection(db, "riddles");
         const snapshot = await getDocs(riddlesRef);
@@ -50,17 +52,23 @@ export async function getRandomRiddle() {
             return null;
         }
 
-        // ✅ Select a random unsolved riddle
+        // ✅ Select a random unsolved riddle and cache it globally
         const randomIndex = Math.floor(Math.random() * unsolvedRiddles.length);
-        return unsolvedRiddles[randomIndex];
+        currentRiddle = unsolvedRiddles[randomIndex];
+
+        // ✅ Display the riddle
+        const riddleElement = document.getElementById("riddleText");
+        if (riddleElement && currentRiddle) {
+            riddleElement.innerText = currentRiddle.riddle;
+        }
 
     } catch (error) {
         console.error("❌ Firestore error while fetching random riddle:", error);
-        return null;
+        currentRiddle = null;
     }
 }
 
-// ✅ Function to submit the answer and validate it with cache bypass
+// ✅ Submit the answer using the cached riddle
 export async function submitAnswer() {
     const teamId = localStorage.getItem("teamId");  
 
@@ -70,7 +78,7 @@ export async function submitAnswer() {
     }
 
     const answer = answerInput.value.trim().toLowerCase();
-    
+
     if (!answer) {
         feedback.innerHTML = `<span style="color: red;">⚠️ Please enter an answer.</span>`;
         return;
@@ -79,19 +87,14 @@ export async function submitAnswer() {
     // ⏳ Show loading indicator
     showLoadingIndicator();
 
-    // 🔥 Force Firestore to fetch fresh data (bypass cache)
-    await disableNetwork(db);
+    // ✅ Ensure the riddle is cached before proceeding
+    if (!currentRiddle) {
+        feedback.innerHTML = `<span style="color: red;">❌ No riddle loaded. Please refresh the page.</span>`;
+        return;
+    }
 
     try {
-        const riddle = await getRandomRiddle();
-        
-        if (!riddle) {
-            feedback.innerHTML = `<span style='color: red;'>No riddle available. Try again later.</span>`;
-            await enableNetwork(db);  // Re-enable cache
-            return;
-        }
-
-        if (answer === riddle.answer) {
+        if (answer === currentRiddle.answer) {
             feedback.innerHTML = `<span class='success-text'>✅ Correct! Proceeding to next level...</span>`;
 
             const teamRef = doc(db, "teams", teamId);
@@ -102,7 +105,7 @@ export async function submitAnswer() {
             const currentLevel = teamSnap.exists() ? teamSnap.data().currentLevel || 1 : 1;
 
             // ✅ Add the current riddle to the solved list
-            solvedRiddles.push(riddle.id);
+            solvedRiddles.push(currentRiddle.id);
 
             // ✅ Increment the level in Firestore
             await updateDoc(teamRef, {
@@ -132,9 +135,6 @@ export async function submitAnswer() {
     } catch (error) {
         console.error("❌ Error submitting answer:", error);
         feedback.innerHTML = `<span style="color: red;">❌ Error submitting answer. Try again.</span>`;
-    } finally {
-        // 🔥 Re-enable cache after submission
-        await enableNetwork(db);
     }
 }
 
@@ -188,16 +188,7 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        const riddle = await getRandomRiddle();
-        const riddleElement = document.getElementById("riddleText");
-
-        if (riddle && riddleElement) {
-            console.log(`🧩 Riddle: ${riddle.riddle}`);
-            riddleElement.innerText = riddle.riddle;  // ✅ Display the riddle
-        } else {
-            console.warn("⚠️ Riddle or element not found.");
-        }
-
+        await loadRiddle();  // ✅ Load riddle once on login
         await showCurrentLevel();  // ✅ Display the current level
     }
 });
