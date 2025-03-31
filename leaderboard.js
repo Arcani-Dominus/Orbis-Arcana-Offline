@@ -75,3 +75,6 @@ leaderboardButton.addEventListener("click", async () => {
     leaderboardVisible = !leaderboardVisible;
 });
 
+// ✅ Export the leaderboard function
+export { loadLeaderboard };
+
