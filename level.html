@@ -30,13 +30,13 @@
 
     <!-- ✅ Import JavaScript Modules -->
     <script type="module" src="./firebase-config.js"></script>
-   <script type="module" src="./leaderboard.js?v=1.0"></script>
+    <script type="module" src="./leaderboard.js?v=1.0"></script>
     <script type="module" src="./levels.js"></script>
 
     <!-- ✅ Script for Riddles, Answers, and Announcements -->
     <script type="module">
         import { getRandomRiddle, submitAnswer, getAnnouncement } from "./levels.js";
-        import { startLeaderboardListener, stopLeaderboardListener } from "./leaderboard.js";
+        import { loadLeaderboard } from "./leaderboard.js";  <!-- ✅ Only import the required function -->
 
         let leaderboardVisible = false;
 
@@ -73,17 +73,16 @@
         }
 
         // ✅ Toggle Leaderboard
-        document.getElementById("loadLeaderboardBtn").addEventListener("click", () => {
+        document.getElementById("loadLeaderboardBtn").addEventListener("click", async () => {
             const leaderboardDiv = document.getElementById("leaderboard");
 
             if (!leaderboardVisible) {
+                await loadLeaderboard();   <!-- ✅ Use the proper leaderboard function -->
                 leaderboardDiv.classList.remove("hidden");
                 leaderboardDiv.style.display = "block";
-                startLeaderboardListener();
             } else {
                 leaderboardDiv.classList.add("hidden");
                 leaderboardDiv.style.display = "none";
-                stopLeaderboardListener();
             }
 
             leaderboardVisible = !leaderboardVisible;
@@ -99,12 +98,6 @@
                 submitButton.addEventListener("click", submitAnswer);
             }
         });
-
-        // ✅ Clean up the listener when navigating away
-        window.addEventListener("beforeunload", () => {
-            stopLeaderboardListener();
-        });
-
     </script>
 </body>
 </html>
