@@ -31,12 +31,12 @@
     <!-- ✅ JavaScript Code -->
     <script type="module">
         import { db, auth } from "./firebase-config.js";
-        import { getDoc, doc, collection, query, orderBy, getDocs, updateDoc, limit, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
-        import { getRiddle, getAnswer, getAnnouncement } from "./levels.js";
+        import { getRandomRiddle, submitAnswer, getAnnouncement } from "./levels.js";
+        import { collection, query, orderBy, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
         let unsubscribeLeaderboard = null;  // ✅ To stop the listener when not needed
 
-        // ✅ Function to Load the Riddle
+        // ✅ Function to Load a Random Riddle
         async function loadRiddle() {
             const riddleTextElement = document.getElementById("riddleText");
             const levelTitleElement = document.getElementById("levelTitle");
@@ -46,54 +46,14 @@
                 return;
             }
 
-            const riddle = await getRiddle();
+            const riddle = await getRandomRiddle();
             
             if (riddle) {
-                riddleTextElement.innerText = riddle;
+                riddleTextElement.innerText = riddle.riddle || "No riddle found!";
                 levelTitleElement.innerText = "Random Level";  // ✅ Display random level label
             } else {
                 console.warn("⚠ No riddle found.");
                 riddleTextElement.innerText = "No riddle available!";
-            }
-        }
-
-        // ✅ Function to Submit Answer
-        async function submitAnswer() {
-            const user = auth.currentUser;
-            const feedback = document.getElementById("feedback");
-
-            if (!user) {
-                feedback.innerHTML = "<span style='color: red;'>Error: You need to log in first.</span>";
-                return;
-            }
-
-            const studentID = user.uid;
-            const answerInput = document.getElementById("answerInput").value.trim().toLowerCase();
-
-            try {
-                const correctAnswer = await getAnswer("random");  // ✅ Always check against random answers
-
-                if (correctAnswer && answerInput === correctAnswer) {
-                    feedback.innerHTML = "<span class='success-text'>✅ Correct! Proceeding to next level...</span>";
-
-                    const playerRef = doc(db, "players", studentID);
-                    
-                    // ✅ Update Firestore: level progression and timestamp
-                    await updateDoc(playerRef, { 
-                        level: serverTimestamp(),  // ✅ Store timestamp for sorting
-                        timestamp: serverTimestamp()
-                    });
-
-                    setTimeout(() => {
-                        window.location.href = `level.html`;  // Reload random level
-                    }, 2000);
-
-                } else {
-                    feedback.innerHTML = "<span style='color: red;'>❌ Wrong answer! Try again.</span>";
-                }
-            } catch (error) {
-                console.error("❌ Error checking answer:", error);
-                feedback.innerHTML = "<span style='color: red;'>Error submitting answer. Try again.</span>";
             }
         }
 
@@ -110,8 +70,8 @@
 
             const leaderboardQuery = query(
                 collection(db, "players"),
-                orderBy("level", "desc"),          // Sort by highest level
-                orderBy("timestamp", "asc")        // Then by submission time
+                orderBy("lastAnswerTimestamp", "desc"),
+                limit(10)
             );
 
             // ✅ Automatically update leaderboard on Firestore changes
