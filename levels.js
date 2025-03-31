@@ -5,9 +5,6 @@ import {
     getDocs, collection, doc, updateDoc, serverTimestamp, getDoc
 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-// ✅ Cache the loaded riddle globally
-let currentRiddle = null;
-
 const feedback = document.getElementById("feedback");
 const answerInput = document.getElementById("answerInput");
 
@@ -16,8 +13,25 @@ function showLoadingIndicator(message = "⏳ Checking answer...") {
     feedback.innerHTML = `<span style="color: blue;">${message}</span>`;
 }
 
-// ✅ Fetch and cache a random riddle ONCE on page load
+// ✅ Load the riddle: First check localStorage, then Firestore
 export async function loadRiddle() {
+    const riddleElement = document.getElementById("riddleText");
+
+    // ✅ Check if a riddle is stored in localStorage
+    const storedRiddle = localStorage.getItem("currentRiddle");
+
+    if (storedRiddle) {
+        console.log("📌 Using cached riddle from localStorage.");
+        const cachedRiddle = JSON.parse(storedRiddle);
+
+        // ✅ Display the cached riddle
+        if (riddleElement) {
+            riddleElement.innerText = cachedRiddle.riddle;
+        }
+        return;
+    }
+
+    // 🔥 If no riddle in localStorage, fetch a new one
     try {
         const riddlesRef = collection(db, "riddles");
         const snapshot = await getDocs(riddlesRef);
@@ -52,23 +66,24 @@ export async function loadRiddle() {
             return null;
         }
 
-        // ✅ Select a random unsolved riddle and cache it globally
+        // ✅ Select a random unsolved riddle
         const randomIndex = Math.floor(Math.random() * unsolvedRiddles.length);
-        currentRiddle = unsolvedRiddles[randomIndex];
+        const selectedRiddle = unsolvedRiddles[randomIndex];
+
+        // ✅ Store the riddle in localStorage
+        localStorage.setItem("currentRiddle", JSON.stringify(selectedRiddle));
 
         // ✅ Display the riddle
-        const riddleElement = document.getElementById("riddleText");
-        if (riddleElement && currentRiddle) {
-            riddleElement.innerText = currentRiddle.riddle;
+        if (riddleElement) {
+            riddleElement.innerText = selectedRiddle.riddle;
         }
 
     } catch (error) {
         console.error("❌ Firestore error while fetching random riddle:", error);
-        currentRiddle = null;
     }
 }
 
-// ✅ Submit the answer using the cached riddle
+// ✅ Submit the answer using the cached or loaded riddle
 export async function submitAnswer() {
     const teamId = localStorage.getItem("teamId");  
 
@@ -84,14 +99,17 @@ export async function submitAnswer() {
         return;
     }
 
-    // ⏳ Show loading indicator
     showLoadingIndicator();
 
-    // ✅ Ensure the riddle is cached before proceeding
-    if (!currentRiddle) {
+    // ✅ Get the riddle from localStorage
+    const storedRiddle = localStorage.getItem("currentRiddle");
+
+    if (!storedRiddle) {
         feedback.innerHTML = `<span style="color: red;">❌ No riddle loaded. Please refresh the page.</span>`;
         return;
     }
+
+    const currentRiddle = JSON.parse(storedRiddle);
 
     try {
         if (answer === currentRiddle.answer) {
@@ -114,13 +132,16 @@ export async function submitAnswer() {
                 lastAnswerTimestamp: serverTimestamp()
             });
 
+            // 🔥 Clear the solved riddle from localStorage
+            localStorage.removeItem("currentRiddle");
+
             // ✅ Check if all riddles are solved after updating Firestore
             const riddlesRef = collection(db, "riddles");
             const totalRiddlesSnapshot = await getDocs(riddlesRef);
 
             if (solvedRiddles.length >= totalRiddlesSnapshot.size) {
                 console.log("🎯 All riddles solved! Redirecting...");
-                window.location.href = "congratulations.html";  // ✅ Redirect to completion page
+                window.location.href = "congratulations.html";
             } else {
                 console.log("✅ Proceeding to next level...");
                 setTimeout(() => {
@@ -188,7 +209,7 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        await loadRiddle();  // ✅ Load riddle once on login
+        await loadRiddle();  // ✅ Load the riddle once
         await showCurrentLevel();  // ✅ Display the current level
     }
 });
