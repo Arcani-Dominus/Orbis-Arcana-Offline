@@ -2,23 +2,29 @@ import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
 import { getDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-export async function getRiddle(level) {
+// ✅ Function to get a random riddle
+export async function getRiddle() {
     try {
-        const levelRef = doc(db, "answers", level.toString());
-        const levelSnap = await getDoc(levelRef);
+        const riddlesRef = doc(db, "riddles", "all");
+        const riddlesSnap = await getDoc(riddlesRef);
 
-        if (levelSnap.exists()) {
-            return levelSnap.data().riddle;
-        } else {
-            console.warn(`⚠️ No riddle found for Level ${level}`);
+        if (!riddlesSnap.exists()) {
+            console.warn("⚠️ No riddles found in Firestore.");
             return null;
         }
+
+        const riddles = riddlesSnap.data().riddles || [];
+        if (riddles.length === 0) return null;
+
+        const randomIndex = Math.floor(Math.random() * riddles.length);
+        return riddles[randomIndex];
     } catch (error) {
         console.error("❌ Firestore error while fetching riddle:", error);
         return null;
     }
 }
 
+// ✅ Function to fetch the correct answer for the current level
 export async function getAnswer(level) {
     try {
         const levelRef = doc(db, "answers", level.toString());
@@ -36,6 +42,7 @@ export async function getAnswer(level) {
     }
 }
 
+// ✅ Function to load announcements
 export async function getAnnouncement() {
     try {
         const announcementRef = doc(db, "announcements", "latest");
@@ -53,65 +60,74 @@ export async function getAnnouncement() {
     }
 }
 
+// ✅ Function to submit the answer and store the timestamp
 async function submitAnswer() {
-    const user = auth.currentUser;
     const feedback = document.getElementById("feedback");
 
-    if (!user) {
-        feedback.innerHTML = "<span style='color: red;'>Error: You need to log in first.</span>";
+    const teamId = localStorage.getItem("teamId");  // ✅ Retrieve the team ID from localStorage
+    if (!teamId) {
+        feedback.innerHTML = `<span style='color: red;'>Error: Team not found.</span>`;
         return;
     }
 
-    const studentID = user.uid;
     const urlParams = new URLSearchParams(window.location.search);
-    const level = parseInt(urlParams.get("level")) || 2;
+    const currentLevel = parseInt(urlParams.get("level")) || 1;
     const answerInput = document.getElementById("answerInput").value.trim().toLowerCase();
 
     try {
-        const correctAnswer = await getAnswer(level);
-        
+        const correctAnswer = await getAnswer(currentLevel);
+
         if (correctAnswer && answerInput === correctAnswer) {
-            feedback.innerHTML = "<span class='success-text'>Correct! Proceeding to next level...</span>";
-            const playerRef = doc(db, "players", studentID);
+            feedback.innerHTML = `<span class='success-text'>✅ Correct! Proceeding to next level...</span>`;
             
-            // ✅ Update level and timestamp in Firestore
-            await updateDoc(playerRef, { 
-                level: level + 1,
-                timestamp: serverTimestamp() // ✅ Auto-updates the timestamp
+            const teamRef = doc(db, "teams", teamId);
+
+            // ✅ Update Firestore: level progression and timestamp
+            await updateDoc(teamRef, {
+                level: currentLevel + 1,
+                lastAnswerTimestamp: serverTimestamp()  // ✅ Store submission timestamp
             });
 
             setTimeout(() => {
-                window.location.href = `level.html?level=${level + 1}`;
+                window.location.href = `level.html?level=${currentLevel + 1}`;
             }, 2000);
+
         } else {
-            feedback.innerHTML = "<span style='color: red;'>Wrong answer! Try again.</span>";
+            feedback.innerHTML = `<span style='color: red;'>❌ Wrong answer! Try again.</span>`;
         }
     } catch (error) {
-        console.error("❌ Error checking answer:", error);
+        console.error("❌ Error submitting answer:", error);
+        feedback.innerHTML = `<span style="color: red;">❌ Error submitting answer. Try again.</span>`;
     }
 }
 
-// ✅ Ensure Users Stay Logged In & Redirect to Their Level
+// ✅ Ensure Users Stay Logged In & Redirect to Their Current Level
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        console.log("✅ User is already logged in:", user.email);
+        console.log(`✅ User logged in: ${user.email}`);
 
-        const playerRef = doc(db, "players", user.uid);
-        const playerSnap = await getDoc(playerRef);
+        const teamId = localStorage.getItem("teamId");
+        if (!teamId) {
+            console.error("❌ Team ID not found in localStorage.");
+            return;
+        }
 
-        if (playerSnap.exists()) {
-            const lastLevel = playerSnap.data().level || 2;
+        const teamRef = doc(db, "teams", teamId);
+        const teamSnap = await getDoc(teamRef);
+
+        if (teamSnap.exists()) {
+            const lastLevel = teamSnap.data().level || 1;
             const urlParams = new URLSearchParams(window.location.search);
-            const currentLevel = parseInt(urlParams.get("level")) || 2;
+            const currentLevel = parseInt(urlParams.get("level")) || 1;
 
             if (lastLevel !== currentLevel) {
-                console.log(`🔄 Redirecting user to their correct level: ${lastLevel}`);
+                console.log(`🔄 Redirecting to correct level: ${lastLevel}`);
                 window.location.href = `level.html?level=${lastLevel}`;
             } else {
-                console.log(`✅ User is already on the correct level: ${currentLevel}`);
-                const riddle = await getRiddle(currentLevel);
+                console.log(`✅ Already on the correct level: ${currentLevel}`);
+                const riddle = await getRiddle();
                 if (!riddle) {
-                    console.warn(`⚠ No riddle found for Level ${currentLevel}. Redirecting to waiting page...`);
+                    console.warn("⚠ No riddle found. Redirecting to waiting page...");
                     window.location.href = `waiting.html?level=${currentLevel}`;
                 }
             }
@@ -136,8 +152,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// ✅ Force reload to get latest data on mobile
-window.onload = function() {
+// ✅ Force reload to get the latest data on mobile
+window.onload = function () {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(registrations => {
             registrations.forEach(registration => {
