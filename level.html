@@ -36,7 +36,7 @@
     <!-- ✅ Script for Riddles, Answers, and Announcements -->
     <script type="module">
         import { getRandomRiddle, submitAnswer, getAnnouncement } from "./levels.js";
-        import { loadLeaderboard } from "./leaderboard.js";  <!-- ✅ Only import the required function -->
+        import { loadLeaderboard } from "./leaderboard.js";  <!-- ✅ Only import the necessary function -->
 
         let leaderboardVisible = false;
 
@@ -77,7 +77,7 @@
             const leaderboardDiv = document.getElementById("leaderboard");
 
             if (!leaderboardVisible) {
-                await loadLeaderboard();   <!-- ✅ Use the proper leaderboard function -->
+                await loadLeaderboard();   <!-- ✅ Load leaderboard properly -->
                 leaderboardDiv.classList.remove("hidden");
                 leaderboardDiv.style.display = "block";
             } else {
@@ -93,11 +93,16 @@
             loadRiddle();
             loadAnnouncements();
 
+            // ✅ Make sure event listeners are correctly attached
             const submitButton = document.getElementById("submitAnswer");
             if (submitButton) {
-                submitButton.addEventListener("click", submitAnswer);
+                submitButton.addEventListener("click", () => {
+                    const answerInput = document.getElementById("answerInput").value.trim();
+                    submitAnswer(answerInput);  // ✅ Ensure you pass the answer input to the function
+                });
             }
         });
+
     </script>
 </body>
 </html>
