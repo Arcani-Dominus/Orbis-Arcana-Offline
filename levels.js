@@ -5,7 +5,7 @@ import {
     getDocs, collection, doc, updateDoc, serverTimestamp, getDoc 
 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-// ✅ Fetch a random riddle from the Firestore "riddles" collection
+// ✅ Fetch all riddles and check for unseen ones
 export async function getRandomRiddle() {
     try {
         const riddlesRef = collection(db, "riddles");
@@ -25,9 +25,28 @@ export async function getRandomRiddle() {
             });
         });
 
-        // ✅ Pick a random riddle
-        const randomIndex = Math.floor(Math.random() * riddles.length);
-        return riddles[randomIndex];
+        // ✅ Retrieve seen riddles from localStorage
+        let seenRiddles = JSON.parse(localStorage.getItem("seenRiddles")) || [];
+
+        // ✅ Check if the player has solved all riddles
+        if (seenRiddles.length >= riddles.length) {
+            console.log("✅ All riddles solved! Redirecting...");
+            window.location.href = "congratulations.html";  // 🎯 Redirect to completion page
+            return null;
+        }
+
+        // ✅ Filter unseen riddles
+        const unseenRiddles = riddles.filter(riddle => !seenRiddles.includes(riddle.id));
+
+        // ✅ Select a random unseen riddle
+        const randomIndex = Math.floor(Math.random() * unseenRiddles.length);
+        const selectedRiddle = unseenRiddles[randomIndex];
+
+        // ✅ Add to seen list and store it in localStorage
+        seenRiddles.push(selectedRiddle.id);
+        localStorage.setItem("seenRiddles", JSON.stringify(seenRiddles));
+
+        return selectedRiddle;
 
     } catch (error) {
         console.error("❌ Firestore error while fetching random riddle:", error);
@@ -59,14 +78,26 @@ export async function submitAnswer() {
 
             const teamRef = doc(db, "teams", teamId);
 
-            // ✅ Update Firestore with new level progression
+            // ✅ Update Firestore with solved riddle count
+            const teamSnap = await getDoc(teamRef);
+            const solvedCount = (teamSnap.exists() && teamSnap.data().solvedCount) || 0;
+
             await updateDoc(teamRef, {
+                solvedCount: solvedCount + 1,
                 lastAnswerTimestamp: serverTimestamp() 
             });
 
-            setTimeout(() => {
-                window.location.href = `level.html`;
-            }, 2000);
+            // ✅ Redirect to congrats page if all riddles are solved
+            const riddlesRef = collection(db, "riddles");
+            const totalRiddlesSnapshot = await getDocs(riddlesRef);
+            
+            if (solvedCount + 1 >= totalRiddlesSnapshot.size) {
+                window.location.href = "congratulations.html";  // 🎯 Redirect to congrats page
+            } else {
+                setTimeout(() => {
+                    window.location.href = `level.html`;
+                }, 2000);
+            }
 
         } else {
             feedback.innerHTML = `<span style='color: red;'>❌ Wrong answer! Try again.</span>`;
@@ -74,6 +105,24 @@ export async function submitAnswer() {
     } catch (error) {
         console.error("❌ Error submitting answer:", error);
         feedback.innerHTML = `<span style="color: red;">❌ Error submitting answer. Try again.</span>`;
+    }
+}
+
+// ✅ Real-time announcements fetch
+export async function getAnnouncement() {
+    try {
+        const announcementRef = doc(db, "announcements", "latest");
+        const announcementSnap = await getDoc(announcementRef);
+
+        if (announcementSnap.exists()) {
+            return announcementSnap.data().message || "No announcement available.";
+        } else {
+            console.warn("⚠️ No announcement found.");
+            return "No announcements available.";
+        }
+    } catch (error) {
+        console.error("❌ Firestore error while fetching announcement:", error);
+        return "Error loading announcements.";
     }
 }
 
@@ -99,43 +148,3 @@ onAuthStateChanged(auth, async (user) => {
         }
     }
 });
-
-// ✅ Real-time announcements fetch
-export async function getAnnouncement() {
-    try {
-        const announcementRef = doc(db, "announcements", "latest");
-        const announcementSnap = await getDoc(announcementRef);
-
-        if (announcementSnap.exists()) {
-            return announcementSnap.data().message || "No announcement available.";
-        } else {
-            console.warn("⚠️ No announcement found.");
-            return "No announcements available.";
-        }
-    } catch (error) {
-        console.error("❌ Firestore error while fetching announcement:", error);
-        return "Error loading announcements.";
-    }
-}
-
-// ✅ Attach Submit Button Event
-document.addEventListener("DOMContentLoaded", () => {
-    const submitButton = document.getElementById("submitAnswer");
-    
-    if (submitButton) {
-        submitButton.addEventListener("click", submitAnswer);
-    } else {
-        console.warn("⚠ Submit button not found in HTML.");
-    }
-});
-
-// ✅ Force reload to get the latest data on mobile
-window.onload = function () {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-            registrations.forEach(registration => {
-                registration.unregister();
-            });
-        });
-    }
-};
