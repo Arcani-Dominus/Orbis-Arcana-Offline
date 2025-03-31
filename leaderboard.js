@@ -18,10 +18,10 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const leaderboardRef = collection(db, "teams");
             const q = query(
-                leaderboardRef, 
-                orderBy("currentLevel", "desc"),        // Sort by highest level
-                orderBy("lastAnswerTimestamp", "asc"), // Tie-breaker by timestamp
-                limit(10)                              // Top 10 only
+                leaderboardRef,
+                orderBy("currentLevel", "desc"),         // Sort by highest level
+                orderBy("lastAnswerTimestamp", "asc"),  // Tie-breaker by timestamp
+                limit(10)                               // Top 10 only
             );
 
             const snapshot = await getDocs(q);
@@ -32,6 +32,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            console.log("🔥 Snapshot size:", snapshot.size);
+
             let leaderboardHTML = "<h3>🏆 Top 10 Teams</h3><ol>";
             let count = 0;
 
@@ -39,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (count >= 10) return;  // ✅ Ensure only 10 teams are shown
 
                 const team = doc.data();
+                console.log("📌 Team Data:", team);
 
                 // ✅ Use Firestore field names exactly
                 const teamName = team.teamName || "Unknown Team";
