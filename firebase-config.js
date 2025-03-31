@@ -2,17 +2,22 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-// ✅ Your Firebase configuration
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyChs_NAolpqRZ-dV22bZ5KXhqXa5XuNJTI",
-  authDomain: "orbis-arcana.firebaseapp.com",
-  projectId: "orbis-arcana",
-  storageBucket: "orbis-arcana.firebasestorage.app",
-  messagingSenderId: "474107878031",
-  appId: "1:474107878031:web:0869ada48ff6a446356efa"
+  apiKey: "AIzaSyC1T0aeLmHt3cEppYkSFJijsgAbKWdq3ks",
+  authDomain: "orbis-arcana-offline.firebaseapp.com",
+  projectId: "orbis-arcana-offline",
+  storageBucket: "orbis-arcana-offline.firebasestorage.app",
+  messagingSenderId: "125346575338",
+  appId: "1:125346575338:web:b1b82b69e71f35b146b893"
 };
 
-// ✅ Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app); // ✅ Enable Firebase Authentication
