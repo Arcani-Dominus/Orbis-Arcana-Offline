@@ -2,39 +2,47 @@ import { auth, db } from "./firebase-config.js";
 import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
 import { setDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-document.getElementById("registerBtn").addEventListener("click", async () => {
-    const name = document.getElementById("name").value.trim();
-    const studentID = document.getElementById("studentID").value.trim(); // ✅ Get student ID
+// ✅ DOM Elements
+const registerBtn = document.getElementById("registerBtn");
+const result = document.getElementById("result");
+
+registerBtn.addEventListener("click", async () => {
+    // 🔹 Get Form Values
+    const teamName = document.getElementById("teamName").value.trim();
+    const members = document.getElementById("members").value.trim();
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
-    const result = document.getElementById("result");
 
-    if (!name || !studentID || !email || !password) {
-        result.innerHTML = "<span style='color: red;'>Please enter all details.</span>";
+    if (!teamName || !members || !email || !password) {
+        result.innerHTML = `<span style='color: red;'>Please enter all details.</span>`;
         return;
     }
 
     try {
+        // 🔥 Register the Team with Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // ✅ Save player data to Firestore with student ID & timestamp
-        await setDoc(doc(db, "players", user.uid), {
-            name: name,
-            studentID: studentID, // ✅ Store student ID
+        // 🔥 Store team data in Firestore with registration timestamp
+        await setDoc(doc(db, "teams", user.uid), {
+            teamName: teamName,
+            members: members.split(',').map(name => name.trim()),  // ✅ Store members as an array
             email: email,
-            level: 2,
-            timestamp: serverTimestamp() // ✅ Store registration timestamp
+            level: 1,                   // ✅ Start at Level 1
+            createdAt: serverTimestamp() // ✅ Store registration timestamp
         });
 
-        localStorage.setItem("userId", user.uid); // ✅ Save session
-        localStorage.setItem("studentID", studentID); // ✅ Store student ID locally
+        // ✅ Store UID in localStorage for tracking during gameplay
+        localStorage.setItem("teamId", user.uid);
+        localStorage.setItem("teamName", teamName);
 
-        result.innerHTML = "<span class='success-text'>Registration successful! Redirecting...</span>";
+        result.innerHTML = `<span class='success-text'>Registration successful! Redirecting...</span>`;
 
+        // 🔹 Redirect to the game page after registration
         setTimeout(() => {
-            window.location.href = "level.html?level=2";
+            window.location.href = "level.html";  // ✅ Redirect to game
         }, 2000);
+
     } catch (error) {
         console.error("❌ Registration failed:", error);
         result.innerHTML = `<span style='color: red;'>Error: ${error.message}</span>`;
