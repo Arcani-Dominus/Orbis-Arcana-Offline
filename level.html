@@ -31,13 +31,13 @@
     <!-- ✅ JavaScript Code -->
     <script type="module">
         import { db, auth } from "./firebase-config.js";
-        import { getDoc, doc, collection, query, orderBy, getDocs, updateDoc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+        import { getDoc, doc, collection, query, orderBy, getDocs, updateDoc, limit, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
         import { getRiddle, getAnswer, getAnnouncement } from "./levels.js";
 
-        async function loadRiddle() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const level = parseInt(urlParams.get("level")) || 2;
+        let unsubscribeLeaderboard = null;  // ✅ To stop the listener when not needed
 
+        // ✅ Function to Load the Riddle
+        async function loadRiddle() {
             const riddleTextElement = document.getElementById("riddleText");
             const levelTitleElement = document.getElementById("levelTitle");
 
@@ -46,11 +46,18 @@
                 return;
             }
 
-            const riddleText = await getRiddle(level);
-            levelTitleElement.innerText = `Level ${level}`;
-            riddleTextElement.innerText = riddleText || "Riddle not found!";
+            const riddle = await getRiddle();
+            
+            if (riddle) {
+                riddleTextElement.innerText = riddle;
+                levelTitleElement.innerText = "Random Level";  // ✅ Display random level label
+            } else {
+                console.warn("⚠ No riddle found.");
+                riddleTextElement.innerText = "No riddle available!";
+            }
         }
 
+        // ✅ Function to Submit Answer
         async function submitAnswer() {
             const user = auth.currentUser;
             const feedback = document.getElementById("feedback");
@@ -61,83 +68,71 @@
             }
 
             const studentID = user.uid;
-            const urlParams = new URLSearchParams(window.location.search);
-            const level = parseInt(urlParams.get("level")) || 2;
             const answerInput = document.getElementById("answerInput").value.trim().toLowerCase();
 
             try {
-                const correctAnswer = await getAnswer(level);
-                
+                const correctAnswer = await getAnswer("random");  // ✅ Always check against random answers
+
                 if (correctAnswer && answerInput === correctAnswer) {
-                    feedback.innerHTML = "<span class='success-text'>Correct! Proceeding to next level...</span>";
+                    feedback.innerHTML = "<span class='success-text'>✅ Correct! Proceeding to next level...</span>";
+
                     const playerRef = doc(db, "players", studentID);
+                    
+                    // ✅ Update Firestore: level progression and timestamp
                     await updateDoc(playerRef, { 
-                        level: level + 1,
-                        timestamp: serverTimestamp() // ✅ Auto-add timestamp when updating level
+                        level: serverTimestamp(),  // ✅ Store timestamp for sorting
+                        timestamp: serverTimestamp()
                     });
 
                     setTimeout(() => {
-                        window.location.href = `level.html?level=${level + 1}`;
+                        window.location.href = `level.html`;  // Reload random level
                     }, 2000);
+
                 } else {
-                    feedback.innerHTML = "<span style='color: red;'>Wrong answer! Try again.</span>";
+                    feedback.innerHTML = "<span style='color: red;'>❌ Wrong answer! Try again.</span>";
                 }
             } catch (error) {
                 console.error("❌ Error checking answer:", error);
+                feedback.innerHTML = "<span style='color: red;'>Error submitting answer. Try again.</span>";
             }
         }
 
-        // ✅ Updated loadLeaderboard Function
-        async function loadLeaderboard() {
-            try {
-                const leaderboardDiv = document.getElementById("leaderboard");
-                if (!leaderboardDiv) {
-                    console.error("❌ leaderboardDiv not found in HTML.");
-                    return;
-                }
+        // ✅ Real-Time Leaderboard Listener
+        function startRealTimeLeaderboard() {
+            const leaderboardDiv = document.getElementById("leaderboard");
 
-                leaderboardDiv.innerHTML = "<p>Loading...</p>";
+            if (!leaderboardDiv) {
+                console.error("❌ Leaderboard div not found.");
+                return;
+            }
 
-                const leaderboardQuery = query(
-                    collection(db, "players"),
-                    orderBy("level", "desc"),
-                    orderBy("timestamp", "asc"),
-                    limit(10) // ✅ Show only top 10 players
-                );
+            leaderboardDiv.innerHTML = "<p>Loading...</p>";
 
-                const querySnapshot = await getDocs(leaderboardQuery);
+            const leaderboardQuery = query(
+                collection(db, "players"),
+                orderBy("level", "desc"),          // Sort by highest level
+                orderBy("timestamp", "asc")        // Then by submission time
+            );
 
-                if (querySnapshot.empty) {
+            // ✅ Automatically update leaderboard on Firestore changes
+            unsubscribeLeaderboard = onSnapshot(leaderboardQuery, (snapshot) => {
+                if (snapshot.empty) {
                     leaderboardDiv.innerHTML = "<p>No players found.</p>";
                     return;
                 }
 
                 let leaderboardHTML = "<ol>";
-                let rank = 1;
-
-                querySnapshot.forEach((doc) => {
+                snapshot.forEach((doc) => {
                     const player = doc.data();
                     const playerName = player.name || "Unknown";
-                    const playerLevel = parseInt(player.level); // ✅ Ensure it's a number
-
-                    if (isNaN(playerLevel)) {
-                        console.warn(`⚠ Skipping invalid player entry:`, player);
-                        return; // ❌ Skip invalid players
-                    }
+                    const playerLevel = player.level || "N/A";
 
                     leaderboardHTML += `<li>${playerName} - Level ${playerLevel}</li>`;
-
-                    rank++;
                 });
 
                 leaderboardHTML += "</ol>";
                 leaderboardDiv.innerHTML = leaderboardHTML;
-                leaderboardDiv.classList.remove("hidden");
-                leaderboardDiv.style.display = "block";
-            } catch (error) {
-                console.error("❌ Error loading leaderboard:", error);
-                document.getElementById("leaderboard").innerHTML = "<p>Error loading leaderboard.</p>";
-            }
+            });
         }
 
         // ✅ Toggle Leaderboard Visibility
@@ -145,12 +140,20 @@
             const leaderboardDiv = document.getElementById("leaderboard");
 
             if (leaderboardDiv.style.display === "none" || leaderboardDiv.classList.contains("hidden")) {
-                loadLeaderboard(); // ✅ Load when shown
                 leaderboardDiv.classList.remove("hidden");
                 leaderboardDiv.style.display = "block";
+
+                if (!unsubscribeLeaderboard) {
+                    startRealTimeLeaderboard();  // ✅ Start listener if not already running
+                }
             } else {
                 leaderboardDiv.classList.add("hidden");
-                leaderboardDiv.style.display = "none"; // ✅ Hide leaderboard when clicked again
+                leaderboardDiv.style.display = "none";
+
+                if (unsubscribeLeaderboard) {
+                    unsubscribeLeaderboard();  // ✅ Stop listener when hidden
+                    unsubscribeLeaderboard = null;
+                }
             }
         });
 
@@ -173,6 +176,13 @@
             const submitButton = document.getElementById("submitAnswer");
             if (submitButton) {
                 submitButton.addEventListener("click", submitAnswer);
+            }
+        });
+
+        // ✅ Clean up the listener when navigating away
+        window.addEventListener("beforeunload", () => {
+            if (unsubscribeLeaderboard) {
+                unsubscribeLeaderboard();
             }
         });
 
