@@ -113,3 +113,25 @@ window.onload = function () {
         });
     }
 };
+
+// ✅ Fetch announcements from Firestore
+import { db } from "./firebase-config.js";
+import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+
+export async function getAnnouncement() {
+    try {
+        const announcementRef = doc(db, "announcements", "latest");
+        const announcementSnap = await getDoc(announcementRef);
+
+        if (announcementSnap.exists()) {
+            return announcementSnap.data().message || "No announcement available.";
+        } else {
+            console.warn("⚠️ No announcement found.");
+            return "No announcements available.";
+        }
+    } catch (error) {
+        console.error("❌ Firestore error while fetching announcement:", error);
+        return "Error loading announcements.";
+    }
+}
+
