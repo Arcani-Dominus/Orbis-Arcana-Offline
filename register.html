@@ -11,16 +11,24 @@
     <div id="container">
         <img src="Orbis Arcane.png" alt="Orbis Arcana Logo" class="logo">
         <h1 class="title">Orbis Arcana</h1>
-        <h2 class="subtitle">Register to Begin Your Journey</h2>
+        <h2 class="subtitle">Register Your Team</h2>
 
-        <!-- 🔹 Input Fields -->
-        <div class="input-container">
-            <input type="text" id="name" class="input-field" placeholder="Enter your name">
-            <input type="text" id="studentID" class="input-field" placeholder="Enter your Student ID"> <!-- ✅ Added Student ID Field -->
-            <input type="email" id="email" class="input-field" placeholder="Enter your email">
-            <input type="password" id="password" class="input-field" placeholder="Enter your password">
-            <button id="registerBtn" class="submit-button">Register</button>
-        </div>
+        <!-- 🔹 Form Grouping -->
+        <form id="registerForm">
+            <label for="teamName">Team Name:</label>
+            <input type="text" id="teamName" class="input-field" placeholder="Enter your team name" required>
+
+            <label for="members">Team Members (comma-separated):</label>
+            <input type="text" id="members" class="input-field" placeholder="Member1, Member2, Member3" required>
+
+            <label for="email">Gmail:</label>
+            <input type="email" id="email" class="input-field" placeholder="Enter your Gmail" required>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" class="input-field" placeholder="Enter your password" required>
+
+            <button type="submit" class="submit-button">Register</button>
+        </form>
 
         <p id="result"></p>
 
