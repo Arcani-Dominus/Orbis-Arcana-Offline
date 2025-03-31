@@ -104,3 +104,6 @@ leaderboardButton.addEventListener("click", async () => {
     leaderboardVisible = !leaderboardVisible;
     console.log(`✅ Leaderboard visibility toggled. Now: ${leaderboardVisible}`);
 });
+
+export { startLeaderboardListener, stopLeaderboardListener };
+
