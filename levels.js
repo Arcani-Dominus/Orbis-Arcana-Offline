@@ -1,9 +1,12 @@
+// ✅ Import dependencies once at the top
 import { auth, db } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
-import { getDocs, collection, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+import { 
+    getDocs, collection, doc, updateDoc, serverTimestamp, getDoc 
+} from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
 // ✅ Fetch a random riddle from the Firestore "riddles" collection
-async function getRandomRiddle() {
+export async function getRandomRiddle() {
     try {
         const riddlesRef = collection(db, "riddles");
         const snapshot = await getDocs(riddlesRef);
@@ -33,7 +36,7 @@ async function getRandomRiddle() {
 }
 
 // ✅ Function to submit the answer and validate it
-async function submitAnswer() {
+export async function submitAnswer() {
     const feedback = document.getElementById("feedback");
     const teamId = localStorage.getItem("teamId");  
 
@@ -93,6 +96,24 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// ✅ Real-time announcements fetch
+export async function getAnnouncement() {
+    try {
+        const announcementRef = doc(db, "announcements", "latest");
+        const announcementSnap = await getDoc(announcementRef);
+
+        if (announcementSnap.exists()) {
+            return announcementSnap.data().message || "No announcement available.";
+        } else {
+            console.warn("⚠️ No announcement found.");
+            return "No announcements available.";
+        }
+    } catch (error) {
+        console.error("❌ Firestore error while fetching announcement:", error);
+        return "Error loading announcements.";
+    }
+}
+
 // ✅ Attach Submit Button Event
 document.addEventListener("DOMContentLoaded", () => {
     const submitButton = document.getElementById("submitAnswer");
@@ -113,25 +134,3 @@ window.onload = function () {
         });
     }
 };
-
-// ✅ Fetch announcements from Firestore
-import { db } from "./firebase-config.js";
-import { getDoc, doc } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
-
-export async function getAnnouncement() {
-    try {
-        const announcementRef = doc(db, "announcements", "latest");
-        const announcementSnap = await getDoc(announcementRef);
-
-        if (announcementSnap.exists()) {
-            return announcementSnap.data().message || "No announcement available.";
-        } else {
-            console.warn("⚠️ No announcement found.");
-            return "No announcements available.";
-        }
-    } catch (error) {
-        console.error("❌ Firestore error while fetching announcement:", error);
-        return "Error loading announcements.";
-    }
-}
-
