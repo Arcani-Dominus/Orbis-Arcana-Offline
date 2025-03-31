@@ -35,60 +35,10 @@
 
     <!-- ✅ Script for Riddles, Answers, and Announcements -->
     <script type="module">
-        import { getRandomRiddle, submitAnswer, getAnnouncement } from "./levels.js";
-        import { loadLeaderboard } from "./leaderboard.js";  // ✅ Correct import
+        import { loadRiddle, submitAnswer, getAnnouncement, showCurrentLevel } from "./levels.js";
+        import { loadLeaderboard } from "./leaderboard.js";  
 
         let leaderboardVisible = false;
-
-        // ✅ Function to Load Riddle
-        async function loadRiddle() {
-            const riddleTextElement = document.getElementById("riddleText");
-            const levelTitleElement = document.getElementById("levelTitle");
-
-            if (!riddleTextElement || !levelTitleElement) {
-                console.warn("⚠ Riddle elements not found.");
-                return;
-            }
-
-            try {
-                const riddle = await getRandomRiddle();
-
-                if (riddle) {
-                    riddleTextElement.innerText = riddle.riddle || "No riddle found!";
-                    levelTitleElement.innerText = "Random Level";  
-                } else {
-                    console.warn("⚠ No riddle found.");
-                    riddleTextElement.innerText = "No riddle available!";
-                }
-            } catch (error) {
-                console.error("❌ Error loading riddle:", error);
-                riddleTextElement.innerText = "Failed to load riddle.";
-            }
-        }
-
-        // ✅ Function to Load Announcements with error handling
-        async function loadAnnouncements() {
-            const announcementElement = document.getElementById("announcements");
-
-            if (!announcementElement) {
-                console.warn("⚠ Announcements element not found.");
-                return;
-            }
-
-            try {
-                const announcementText = await getAnnouncement();
-
-                if (announcementText) {
-                    announcementElement.innerText = announcementText;
-                } else {
-                    console.warn("⚠ No announcement found.");
-                    announcementElement.innerText = "No current announcements.";
-                }
-            } catch (error) {
-                console.error("❌ Error loading announcements:", error);
-                announcementElement.innerText = "Failed to load announcements.";
-            }
-        }
 
         // ✅ Toggle Leaderboard
         document.getElementById("loadLeaderboardBtn").addEventListener("click", async () => {
@@ -107,19 +57,37 @@
         });
 
         // ✅ Attach Event Listeners on Page Load
-        document.addEventListener("DOMContentLoaded", () => {
-            loadRiddle();
-            loadAnnouncements();
+        document.addEventListener("DOMContentLoaded", async () => {
+            await loadRiddle();                // ✅ Load the riddle once
+            await loadAnnouncements();         // ✅ Load announcements
+            await showCurrentLevel();          // ✅ Display the current level
 
             // ✅ Event listener for submit button
             const submitButton = document.getElementById("submitAnswer");
             if (submitButton) {
-                submitButton.addEventListener("click", () => {
-                    const answerInput = document.getElementById("answerInput").value.trim();
-                    submitAnswer(answerInput);
+                submitButton.addEventListener("click", async () => {
+                    await submitAnswer();     // ✅ No parameter required
                 });
             }
         });
+
+        // ✅ Load Announcements Function
+        async function loadAnnouncements() {
+            const announcementElement = document.getElementById("announcements");
+
+            if (!announcementElement) {
+                console.warn("⚠ Announcements element not found.");
+                return;
+            }
+
+            try {
+                const announcementText = await getAnnouncement();
+                announcementElement.innerText = announcementText || "No current announcements.";
+            } catch (error) {
+                console.error("❌ Error loading announcements:", error);
+                announcementElement.innerText = "Failed to load announcements.";
+            }
+        }
 
     </script>
 </body>
