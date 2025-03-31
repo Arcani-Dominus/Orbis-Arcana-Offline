@@ -20,112 +20,125 @@ async function getRiddle(level) {
     }
 }
 
-document.getElementById("loginBtn").addEventListener("click", async () => {
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+document.addEventListener("DOMContentLoaded", () => {
+    const loginBtn = document.getElementById("loginBtn");
+    const forgotPasswordBtn = document.getElementById("forgotPassword");
     const result = document.getElementById("result");
 
-    if (!email || !password) {
-        result.innerHTML = "<span style='color: red;'>Please enter both email and password.</span>";
-        return;
-    }
+    if (loginBtn) {
+        loginBtn.addEventListener("click", async () => {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
 
-    try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+            if (!email || !password) {
+                result.innerHTML = "<span style='color: red;'>Please enter both email and password.</span>";
+                return;
+            }
 
-        console.log("✅ User logged in:", user.email);
+            try {
+                // 🔥 Sign in with Firebase Authentication
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
 
-        // ✅ Fetch the player's saved level from Firestore
-        const playerRef = doc(db, "players", user.uid);
-        const playerSnap = await getDoc(playerRef);
+                console.log("✅ User logged in:", user.email);
 
-        if (playerSnap.exists()) {
-            const playerData = playerSnap.data();
-            const lastLevel = playerData.level || 2; // ✅ Default to Level 2 if no data found
+                // 🔥 Fetch the team's saved level from Firestore (use `teams` instead of `players`)
+                const teamRef = doc(db, "teams", user.uid);
+                const teamSnap = await getDoc(teamRef);
 
-            console.log(`🔄 Fetching riddle for Level ${lastLevel}...`);
-            const riddle = await getRiddle(lastLevel);
-            console.log(`🧩 Riddle for Level ${lastLevel}:`, riddle);
+                if (teamSnap.exists()) {
+                    const teamData = teamSnap.data();
+                    const lastLevel = teamData.level || 1;  // ✅ Start at Level 1 by default
 
-            // ✅ Update timestamp when user logs in
-            await updateDoc(playerRef, {
-                lastLogin: serverTimestamp() // 🔥 Auto-updates login timestamp
-            });
+                    console.log(`🔄 Fetching riddle for Level ${lastLevel}...`);
+                    const riddle = await getRiddle(lastLevel);
+                    console.log(`🧩 Riddle for Level ${lastLevel}:`, riddle);
 
-            result.innerHTML = `<span class='success-text'>Login successful! Redirecting to Level ${lastLevel}...</span>`;
-            setTimeout(() => {
-                window.location.href = `level.html?level=${lastLevel}`;
-            }, 2000);
-        } else {
-            console.warn("⚠ No player data found. Redirecting to Level 2...");
+                    // ✅ Update timestamp when user logs in
+                    await updateDoc(teamRef, {
+                        lastLogin: serverTimestamp()  // 🔥 Auto-updates login timestamp
+                    });
 
-            // ✅ Create new player entry if not found
-            await updateDoc(playerRef, {
-                level: 2,
-                lastLogin: serverTimestamp()
-            });
+                    // ✅ Store team info in Local Storage
+                    localStorage.setItem("teamId", user.uid);
+                    localStorage.setItem("teamName", teamData.teamName);
 
-            window.location.href = "level.html?level=2";
-        }
-    } catch (error) {
-        console.error("❌ Login failed:", error);
-        result.innerHTML = `<span style='color: red;'>Error: ${error.message}</span>`;
-    }
-});
+                    result.innerHTML = `<span class='success-text'>Login successful! Redirecting to Level ${lastLevel}...</span>`;
+                    setTimeout(() => {
+                        window.location.href = `level.html?level=${lastLevel}`;
+                    }, 2000);
+                } else {
+                    console.warn("⚠ No team data found. Redirecting to Level 1...");
 
-// ✅ Ensure Users Stay Logged In & Redirect to Their Level
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        console.log("✅ User is already logged in:", user.email);
+                    // ✅ Create new team entry if not found
+                    await updateDoc(teamRef, {
+                        level: 1,
+                        lastLogin: serverTimestamp()
+                    });
 
-        const playerRef = doc(db, "players", user.uid);
-        const playerSnap = await getDoc(playerRef);
-
-        if (playerSnap.exists()) {
-            const lastLevel = playerSnap.data().level || 2;
-            console.log(`🔄 Fetching riddle for Level ${lastLevel}...`);
-            const riddle = await getRiddle(lastLevel);
-            console.log(`🧩 Riddle for Level ${lastLevel}:`, riddle);
-
-            // ✅ Update timestamp when user is already logged in
-            await updateDoc(playerRef, {
-                lastLogin: serverTimestamp()
-            });
-
-            window.location.href = `level.html?level=${lastLevel}`;
-        }
-    }
-});
-
-// ✅ Forgot Password Functionality
-document.getElementById("forgotPassword").addEventListener("click", async (event) => {
-    event.preventDefault();
-
-    const email = prompt("Enter your email to reset the password:");
-    
-    if (!email) {
-        alert("❌ Please enter a valid email.");
-        return;
-    }
-
-    try {
-        await sendPasswordResetEmail(auth, email);
-        alert("✅ Password reset link sent! Check your email.");
-    } catch (error) {
-        console.error("❌ Failed to send reset email:", error);
-        alert(`❌ Error: ${error.message}`);
-    }
-});
-
-
-// ✅ Force reload to get latest data on mobile
-window.onload = function() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-            registrations.forEach(registration => {
-                registration.unregister();
-            });
+                    window.location.href = "level.html?level=1";
+                }
+            } catch (error) {
+                console.error("❌ Login failed:", error);
+                result.innerHTML = `<span style='color: red;'>Error: ${error.message}</span>`;
+            }
         });
     }
-};
+
+    // ✅ Forgot Password Functionality
+    if (forgotPasswordBtn) {
+        forgotPasswordBtn.addEventListener("click", async (event) => {
+            event.preventDefault();
+
+            const email = prompt("Enter your email to reset the password:");
+
+            if (!email) {
+                alert("❌ Please enter a valid email.");
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                alert("✅ Password reset link sent! Check your email.");
+            } catch (error) {
+                console.error("❌ Failed to send reset email:", error);
+                alert(`❌ Error: ${error.message}`);
+            }
+        });
+    }
+
+    // ✅ Ensure Users Stay Logged In & Redirect to Their Level
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            console.log("✅ User is already logged in:", user.email);
+
+            const teamRef = doc(db, "teams", user.uid);   // ✅ Reference `teams` collection
+            const teamSnap = await getDoc(teamRef);
+
+            if (teamSnap.exists()) {
+                const lastLevel = teamSnap.data().level || 1;
+                console.log(`🔄 Fetching riddle for Level ${lastLevel}...`);
+                const riddle = await getRiddle(lastLevel);
+                console.log(`🧩 Riddle for Level ${lastLevel}:`, riddle);
+
+                // ✅ Update timestamp when user is already logged in
+                await updateDoc(teamRef, {
+                    lastLogin: serverTimestamp()
+                });
+
+                window.location.href = `level.html?level=${lastLevel}`;
+            }
+        }
+    });
+
+    // ✅ Force reload to get latest data on mobile
+    window.onload = function () {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(registration => {
+                    registration.unregister();
+                });
+            });
+        }
+    };
+});
