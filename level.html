@@ -36,7 +36,7 @@
     <!-- ✅ Script for Riddles, Answers, and Announcements -->
     <script type="module">
         import { getRandomRiddle, submitAnswer, getAnnouncement } from "./levels.js";
-        import { loadLeaderboard } from "./leaderboard.js";  <!-- ✅ Only import the necessary function -->
+        import { loadLeaderboard } from "./leaderboard.js";  // ✅ Correct import
 
         let leaderboardVisible = false;
 
@@ -50,26 +50,44 @@
                 return;
             }
 
-            const riddle = await getRandomRiddle();
-            
-            if (riddle) {
-                riddleTextElement.innerText = riddle.riddle || "No riddle found!";
-                levelTitleElement.innerText = "Random Level";  
-            } else {
-                console.warn("⚠ No riddle found.");
-                riddleTextElement.innerText = "No riddle available!";
+            try {
+                const riddle = await getRandomRiddle();
+
+                if (riddle) {
+                    riddleTextElement.innerText = riddle.riddle || "No riddle found!";
+                    levelTitleElement.innerText = "Random Level";  
+                } else {
+                    console.warn("⚠ No riddle found.");
+                    riddleTextElement.innerText = "No riddle available!";
+                }
+            } catch (error) {
+                console.error("❌ Error loading riddle:", error);
+                riddleTextElement.innerText = "Failed to load riddle.";
             }
         }
 
-        // ✅ Function to Load Announcements
+        // ✅ Function to Load Announcements with error handling
         async function loadAnnouncements() {
             const announcementElement = document.getElementById("announcements");
+
             if (!announcementElement) {
                 console.warn("⚠ Announcements element not found.");
                 return;
             }
-            const announcementText = await getAnnouncement();
-            announcementElement.innerText = announcementText;
+
+            try {
+                const announcementText = await getAnnouncement();
+
+                if (announcementText) {
+                    announcementElement.innerText = announcementText;
+                } else {
+                    console.warn("⚠ No announcement found.");
+                    announcementElement.innerText = "No current announcements.";
+                }
+            } catch (error) {
+                console.error("❌ Error loading announcements:", error);
+                announcementElement.innerText = "Failed to load announcements.";
+            }
         }
 
         // ✅ Toggle Leaderboard
@@ -77,7 +95,7 @@
             const leaderboardDiv = document.getElementById("leaderboard");
 
             if (!leaderboardVisible) {
-                await loadLeaderboard();   <!-- ✅ Load leaderboard properly -->
+                await loadLeaderboard();  
                 leaderboardDiv.classList.remove("hidden");
                 leaderboardDiv.style.display = "block";
             } else {
@@ -93,12 +111,12 @@
             loadRiddle();
             loadAnnouncements();
 
-            // ✅ Make sure event listeners are correctly attached
+            // ✅ Event listener for submit button
             const submitButton = document.getElementById("submitAnswer");
             if (submitButton) {
                 submitButton.addEventListener("click", () => {
                     const answerInput = document.getElementById("answerInput").value.trim();
-                    submitAnswer(answerInput);  // ✅ Ensure you pass the answer input to the function
+                    submitAnswer(answerInput);
                 });
             }
         });
