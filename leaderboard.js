@@ -5,9 +5,9 @@ const leaderboardElement = document.getElementById("leaderboard");
 const leaderboardButton = document.getElementById("loadLeaderboardBtn");
 let leaderboardVisible = false;  // ✅ Track visibility
 
-// ✅ Load Top 10 Teams from Firestore
+// ✅ Load Top 10 Teams from Firestore with Logs
 async function loadLeaderboard() {
-    console.log("📌 Fetching top 10 teams...");
+    console.log("📌 Attempting to fetch top 10 teams...");
 
     if (!leaderboardElement) {
         console.error("❌ Leaderboard element not found in the DOM.");
@@ -15,8 +15,12 @@ async function loadLeaderboard() {
     }
 
     try {
-        // ✅ Query the "teams" collection, sorting by currentLevel and lastAnswerTimestamp
+        console.log("🔎 Connecting to Firestore...");
+        
+        // ✅ Query the "teams" collection with sorting and limit
         const leaderboardRef = collection(db, "teams");
+        console.log("✅ Reference to 'teams' collection created:", leaderboardRef);
+
         const q = query(
             leaderboardRef,
             orderBy("currentLevel", "desc"),         // Sort by highest level
@@ -24,7 +28,10 @@ async function loadLeaderboard() {
             limit(10)                               // Top 10 teams
         );
 
+        console.log("📌 Query created:", q);
+
         const snapshot = await getDocs(q);
+        console.log("📌 Firestore snapshot received:", snapshot);
 
         if (snapshot.empty) {
             console.warn("⚠ No teams found in Firestore.");
@@ -32,18 +39,24 @@ async function loadLeaderboard() {
             return;
         }
 
+        console.log(`✅ Found ${snapshot.size} teams.`);
+
         let leaderboardHTML = "<h3>🏆 Top 10 Teams</h3><ol>";
         let count = 0;
 
         snapshot.forEach((doc) => {
-            if (count >= 10) return;  // ✅ Ensure only 10 teams are displayed
+            console.log(`📌 Document ID: ${doc.id}`);
+            console.log("🔍 Team Data:", doc.data());
+
+            if (count >= 10) return;
 
             const team = doc.data();
-            console.log("📌 Team Data:", team);   // ✅ Debugging log
 
             // ✅ Display team name and level
             const teamName = team.teamName || "Unknown Team";
             const level = team.currentLevel || 0;
+
+            console.log(`✅ Adding to leaderboard: ${teamName} (Level ${level})`);
 
             leaderboardHTML += `<li>#${count + 1} ${teamName} (Level ${level})</li>`;
             count++;
@@ -62,11 +75,15 @@ async function loadLeaderboard() {
 
 // 🔹 Toggle leaderboard visibility
 leaderboardButton.addEventListener("click", async () => {
+    console.log(`📌 Leaderboard button clicked. Visible: ${leaderboardVisible}`);
+
     if (!leaderboardVisible) {
-        await loadLeaderboard();     // ✅ Fetch only when opening
+        await loadLeaderboard();
         leaderboardElement.style.display = "block";
     } else {
         leaderboardElement.style.display = "none";
     }
-    leaderboardVisible = !leaderboardVisible;    // ✅ Toggle visibility state
+
+    leaderboardVisible = !leaderboardVisible;
+    console.log(`✅ Leaderboard visibility toggled. Now: ${leaderboardVisible}`);
 });
