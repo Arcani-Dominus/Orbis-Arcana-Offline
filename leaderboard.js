@@ -75,4 +75,3 @@ leaderboardButton.addEventListener("click", async () => {
     leaderboardVisible = !leaderboardVisible;
 });
 
-export { startLeaderboardListener, stopLeaderboardListener };
