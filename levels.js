@@ -5,7 +5,7 @@ import {
     getDocs, collection, doc, updateDoc, serverTimestamp, getDoc 
 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
-// ✅ Fetch all riddles and check for unseen ones
+// ✅ Fetch a random riddle from Firestore, ensuring no duplicates
 export async function getRandomRiddle() {
     try {
         const riddlesRef = collection(db, "riddles");
@@ -25,28 +25,25 @@ export async function getRandomRiddle() {
             });
         });
 
-        // ✅ Retrieve seen riddles from localStorage
-        let seenRiddles = JSON.parse(localStorage.getItem("seenRiddles")) || [];
+        // ✅ Get team progress from Firestore
+        const teamId = localStorage.getItem("teamId");
+        const teamRef = doc(db, "teams", teamId);
+        const teamSnap = await getDoc(teamRef);
 
-        // ✅ Check if the player has solved all riddles
-        if (seenRiddles.length >= riddles.length) {
+        const solvedRiddles = teamSnap.exists() ? teamSnap.data().solvedRiddles || [] : [];
+
+        // ✅ Filter out solved riddles
+        const unsolvedRiddles = riddles.filter(riddle => !solvedRiddles.includes(riddle.id));
+
+        if (unsolvedRiddles.length === 0) {
             console.log("✅ All riddles solved! Redirecting...");
             window.location.href = "congratulations.html";  // 🎯 Redirect to completion page
             return null;
         }
 
-        // ✅ Filter unseen riddles
-        const unseenRiddles = riddles.filter(riddle => !seenRiddles.includes(riddle.id));
-
-        // ✅ Select a random unseen riddle
-        const randomIndex = Math.floor(Math.random() * unseenRiddles.length);
-        const selectedRiddle = unseenRiddles[randomIndex];
-
-        // ✅ Add to seen list and store it in localStorage
-        seenRiddles.push(selectedRiddle.id);
-        localStorage.setItem("seenRiddles", JSON.stringify(seenRiddles));
-
-        return selectedRiddle;
+        // ✅ Select a random unsolved riddle
+        const randomIndex = Math.floor(Math.random() * unsolvedRiddles.length);
+        return unsolvedRiddles[randomIndex];
 
     } catch (error) {
         console.error("❌ Firestore error while fetching random riddle:", error);
@@ -78,22 +75,28 @@ export async function submitAnswer() {
 
             const teamRef = doc(db, "teams", teamId);
 
-            // ✅ Update Firestore with solved riddle count
+            // ✅ Get current solved riddles
             const teamSnap = await getDoc(teamRef);
-            const solvedCount = (teamSnap.exists() && teamSnap.data().solvedCount) || 0;
+            const solvedRiddles = teamSnap.exists() ? teamSnap.data().solvedRiddles || [] : [];
 
+            // ✅ Add the current riddle to the solved list (Firestore first)
+            solvedRiddles.push(riddle.id);
+
+            // ✅ Update Firestore with solved riddles BEFORE checking completion
             await updateDoc(teamRef, {
-                solvedCount: solvedCount + 1,
-                lastAnswerTimestamp: serverTimestamp() 
+                solvedRiddles: solvedRiddles,
+                lastAnswerTimestamp: serverTimestamp()
             });
 
-            // ✅ Redirect to congrats page if all riddles are solved
+            // ✅ Check Firestore AFTER updating to avoid race condition
             const riddlesRef = collection(db, "riddles");
             const totalRiddlesSnapshot = await getDocs(riddlesRef);
-            
-            if (solvedCount + 1 >= totalRiddlesSnapshot.size) {
-                window.location.href = "congratulations.html";  // 🎯 Redirect to congrats page
+
+            if (solvedRiddles.length >= totalRiddlesSnapshot.size) {
+                console.log("🎯 All riddles solved! Redirecting...");
+                window.location.href = "congratulations.html";  // ✅ Redirect to completion page
             } else {
+                console.log("✅ Proceeding to next level...");
                 setTimeout(() => {
                     window.location.href = `level.html`;
                 }, 2000);
@@ -126,10 +129,13 @@ export async function getAnnouncement() {
     }
 }
 
-// ✅ Ensure Users Stay Logged In & Redirect to Their Current Level
+// ✅ Clear localStorage on new login
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
+
+        // ✅ Clear localStorage on new login
+        localStorage.removeItem("seenRiddles");
 
         const teamId = localStorage.getItem("teamId");
         if (!teamId) {
