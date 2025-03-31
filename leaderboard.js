@@ -5,6 +5,23 @@ const leaderboardElement = document.getElementById("leaderboard");
 const leaderboardButton = document.getElementById("loadLeaderboardBtn");
 let leaderboardVisible = false;  // ✅ Track visibility
 
+async function testFirestore() {
+    console.log("🔥 Testing Firestore connection...");
+
+    try {
+        const snapshot = await getDocs(collection(db, "teams"));
+        console.log("✅ Firestore connected!");
+        snapshot.forEach(doc => {
+            console.log("📌 Doc ID:", doc.id, "=>", doc.data());
+        });
+    } catch (error) {
+        console.error("❌ Firestore connection failed:", error);
+    }
+}
+
+testFirestore();
+
+
 // ✅ Load Top 10 Teams from Firestore with Logs
 async function loadLeaderboard() {
     console.log("📌 Attempting to fetch top 10 teams...");
