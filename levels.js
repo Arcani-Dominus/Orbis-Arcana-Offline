@@ -75,20 +75,22 @@ export async function submitAnswer() {
 
             const teamRef = doc(db, "teams", teamId);
 
-            // ✅ Get current solved riddles
+            // ✅ Get current solved riddles and level
             const teamSnap = await getDoc(teamRef);
             const solvedRiddles = teamSnap.exists() ? teamSnap.data().solvedRiddles || [] : [];
+            const currentLevel = teamSnap.exists() ? teamSnap.data().currentLevel || 1 : 1;
 
-            // ✅ Add the current riddle to the solved list (Firestore first)
+            // ✅ Add the current riddle to the solved list
             solvedRiddles.push(riddle.id);
 
-            // ✅ Update Firestore with solved riddles BEFORE checking completion
+            // ✅ Increment the level in Firestore
             await updateDoc(teamRef, {
                 solvedRiddles: solvedRiddles,
+                currentLevel: currentLevel + 1,   // ✅ Increment the level
                 lastAnswerTimestamp: serverTimestamp()
             });
 
-            // ✅ Check Firestore AFTER updating to avoid race condition
+            // ✅ Check if all riddles are solved after updating Firestore
             const riddlesRef = collection(db, "riddles");
             const totalRiddlesSnapshot = await getDocs(riddlesRef);
 
@@ -129,13 +131,31 @@ export async function getAnnouncement() {
     }
 }
 
+// ✅ Show the current level
+export async function showCurrentLevel() {
+    const teamId = localStorage.getItem("teamId");
+
+    if (!teamId) {
+        console.warn("⚠️ No team ID found.");
+        return;
+    }
+
+    const teamRef = doc(db, "teams", teamId);
+    const teamSnap = await getDoc(teamRef);
+
+    if (teamSnap.exists()) {
+        const currentLevel = teamSnap.data().currentLevel || 1;
+        const levelElement = document.getElementById("levelTitle");
+        if (levelElement) {
+            levelElement.innerText = `Level ${currentLevel}`;
+        }
+    }
+}
+
 // ✅ Clear localStorage on new login
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         console.log(`✅ User logged in: ${user.email}`);
-
-        // ✅ Clear localStorage on new login
-        localStorage.removeItem("seenRiddles");
 
         const teamId = localStorage.getItem("teamId");
         if (!teamId) {
@@ -152,5 +172,7 @@ onAuthStateChanged(auth, async (user) => {
         } else {
             console.warn("⚠️ Riddle or element not found.");
         }
+
+        await showCurrentLevel();  // ✅ Display the current level
     }
 });
