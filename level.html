@@ -28,21 +28,25 @@
         </div>
     </div>
 
-    <!-- ✅ JavaScript Code -->
+    <!-- ✅ Import JavaScript Modules -->
+    <script type="module" src="./firebase-config.js"></script>
+    <script type="module" src="./leaderboard.js"></script>
+    <script type="module" src="./levels.js"></script>
+
+    <!-- ✅ Script for Riddles, Answers, and Announcements -->
     <script type="module">
-        import { db, auth } from "./firebase-config.js";
         import { getRandomRiddle, submitAnswer, getAnnouncement } from "./levels.js";
-        import { collection, query, orderBy, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+        import { startLeaderboardListener, stopLeaderboardListener } from "./leaderboard.js";
 
-        let unsubscribeLeaderboard = null;  // ✅ To stop the listener when not needed
+        let leaderboardVisible = false;
 
-        // ✅ Function to Load a Random Riddle
+        // ✅ Function to Load Riddle
         async function loadRiddle() {
             const riddleTextElement = document.getElementById("riddleText");
             const levelTitleElement = document.getElementById("levelTitle");
 
             if (!riddleTextElement || !levelTitleElement) {
-                console.warn("⚠ Riddle elements not found in HTML.");
+                console.warn("⚠ Riddle elements not found.");
                 return;
             }
 
@@ -50,74 +54,14 @@
             
             if (riddle) {
                 riddleTextElement.innerText = riddle.riddle || "No riddle found!";
-                levelTitleElement.innerText = "Random Level";  // ✅ Display random level label
+                levelTitleElement.innerText = "Random Level";  
             } else {
                 console.warn("⚠ No riddle found.");
                 riddleTextElement.innerText = "No riddle available!";
             }
         }
 
-        // ✅ Real-Time Leaderboard Listener
-        function startRealTimeLeaderboard() {
-            const leaderboardDiv = document.getElementById("leaderboard");
-
-            if (!leaderboardDiv) {
-                console.error("❌ Leaderboard div not found.");
-                return;
-            }
-
-            leaderboardDiv.innerHTML = "<p>Loading...</p>";
-
-            const leaderboardQuery = query(
-                collection(db, "players"),
-                orderBy("lastAnswerTimestamp", "desc"),
-                limit(10)
-            );
-
-            // ✅ Automatically update leaderboard on Firestore changes
-            unsubscribeLeaderboard = onSnapshot(leaderboardQuery, (snapshot) => {
-                if (snapshot.empty) {
-                    leaderboardDiv.innerHTML = "<p>No players found.</p>";
-                    return;
-                }
-
-                let leaderboardHTML = "<ol>";
-                snapshot.forEach((doc) => {
-                    const player = doc.data();
-                    const playerName = player.name || "Unknown";
-                    const playerLevel = player.level || "N/A";
-
-                    leaderboardHTML += `<li>${playerName} - Level ${playerLevel}</li>`;
-                });
-
-                leaderboardHTML += "</ol>";
-                leaderboardDiv.innerHTML = leaderboardHTML;
-            });
-        }
-
-        // ✅ Toggle Leaderboard Visibility
-        document.getElementById("loadLeaderboardBtn").addEventListener("click", () => {
-            const leaderboardDiv = document.getElementById("leaderboard");
-
-            if (leaderboardDiv.style.display === "none" || leaderboardDiv.classList.contains("hidden")) {
-                leaderboardDiv.classList.remove("hidden");
-                leaderboardDiv.style.display = "block";
-
-                if (!unsubscribeLeaderboard) {
-                    startRealTimeLeaderboard();  // ✅ Start listener if not already running
-                }
-            } else {
-                leaderboardDiv.classList.add("hidden");
-                leaderboardDiv.style.display = "none";
-
-                if (unsubscribeLeaderboard) {
-                    unsubscribeLeaderboard();  // ✅ Stop listener when hidden
-                    unsubscribeLeaderboard = null;
-                }
-            }
-        });
-
-        // ✅ Load Announcements on Page Load
+        // ✅ Function to Load Announcements
         async function loadAnnouncements() {
             const announcementElement = document.getElementById("announcements");
             if (!announcementElement) {
@@ -128,7 +72,24 @@
             announcementElement.innerText = announcementText;
         }
 
-        // ✅ Attach Events on Page Load
+        // ✅ Toggle Leaderboard
+        document.getElementById("loadLeaderboardBtn").addEventListener("click", () => {
+            const leaderboardDiv = document.getElementById("leaderboard");
+
+            if (!leaderboardVisible) {
+                leaderboardDiv.classList.remove("hidden");
+                leaderboardDiv.style.display = "block";
+                startLeaderboardListener();
+            } else {
+                leaderboardDiv.classList.add("hidden");
+                leaderboardDiv.style.display = "none";
+                stopLeaderboardListener();
+            }
+
+            leaderboardVisible = !leaderboardVisible;
+        });
+
+        // ✅ Attach Event Listeners on Page Load
         document.addEventListener("DOMContentLoaded", () => {
             loadRiddle();
             loadAnnouncements();
@@ -141,9 +102,7 @@
 
         // ✅ Clean up the listener when navigating away
         window.addEventListener("beforeunload", () => {
-            if (unsubscribeLeaderboard) {
-                unsubscribeLeaderboard();
-            }
+            stopLeaderboardListener();
         });
 
     </script>
