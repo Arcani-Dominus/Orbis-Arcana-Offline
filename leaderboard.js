@@ -1,9 +1,16 @@
 import { db } from "./firebase-config.js";
 import { collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
+// ✅ Get DOM elements safely
 const leaderboardElement = document.getElementById("leaderboard");
 const leaderboardButton = document.getElementById("loadLeaderboardBtn");
-let leaderboardVisible = false;  // ✅ Track visibility
+
+if (!leaderboardElement || !leaderboardButton) {
+    console.error("❌ Leaderboard or button not found in DOM.");
+    alert("Leaderboard element missing in HTML!");
+}
+
+let leaderboardVisible = false; // ✅ Track visibility
 
 // ✅ Load Top 10 Teams from Firestore
 async function loadLeaderboard() {
@@ -19,7 +26,7 @@ async function loadLeaderboard() {
         const leaderboardRef = collection(db, "teams");
         const q = query(
             leaderboardRef,
-            orderBy("currentLevel", "desc"),          // Sort by highest level
+            orderBy("currentLevel", "desc"),         // Sort by highest level
             orderBy("lastAnswerTimestamp", "asc"),   // Tie-breaker by timestamp
             limit(10)                                // Top 10 teams
         );
@@ -36,12 +43,10 @@ async function loadLeaderboard() {
         let count = 0;
 
         snapshot.forEach((doc) => {
-            if (count >= 10) return;  // ✅ Limit to top 10 teams
-
             const team = doc.data();
-            console.log("📌 Team Data:", team);
+            console.log(`📌 Team ${count + 1}:`, team);
 
-            // ✅ Display team names and levels
+            // ✅ Ensure valid team data
             const teamName = team.teamName || "Unknown Team";
             const level = team.currentLevel || 0;
 
@@ -59,8 +64,8 @@ async function loadLeaderboard() {
 
         console.log("✅ Leaderboard updated successfully!");
     } catch (error) {
-        console.error("❌ Error loading leaderboard:", error);
-        leaderboardElement.innerHTML = "<p>Error loading leaderboard.</p>";
+        console.error("❌ Firestore error while loading leaderboard:", error);
+        leaderboardElement.innerHTML = `<p>Error loading leaderboard: ${error.message}</p>`;
     }
 }
 
