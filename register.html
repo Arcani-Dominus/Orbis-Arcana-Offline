@@ -4,37 +4,178 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Orbis Arcana</title>
-    <link rel="stylesheet" href="styles.css"> <!-- ✅ Apply game theme styles -->
+    <link rel="stylesheet" href="styles.css"> <!-- ✅ External stylesheet -->
+    <style>
+        /* ✅ Global Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;  /* Dark background */
+            color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #container {
+            background: #282828;
+            padding: 30px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        /* ✅ Hover effect */
+        #container:hover {
+            transform: translateY(-5px);
+        }
+
+        .logo {
+            max-width: 120px;
+            margin-bottom: 15px;
+        }
+
+        h1, h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            color: #f0a500; /* Gold color */
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            text-align: left;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            font-size: 0.9rem;
+            color: #333;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            transition: border 0.3s;
+        }
+
+        /* ✅ Form Focus Effect */
+        .input-field:focus {
+            border: 1px solid #f0a500; /* Gold focus border */
+            outline: none;
+        }
+
+        .submit-button {
+            background: #f0a500; 
+            color: #1a1a1a;
+            font-size: 1rem;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .submit-button:hover {
+            background: #ffcc00;
+        }
+
+        #result {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #ff4747;
+        }
+
+        .switch-page {
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+
+        .switch-page a {
+            color: #f0a500;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .switch-page a:hover {
+            color: #ffcc00;
+            text-decoration: underline;
+        }
+
+        /* ✅ Mobile Friendly Styles */
+        @media (max-width: 480px) {
+            #container {
+                padding: 20px 15px;
+                width: 95%;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            h2 {
+                font-size: 1rem;
+            }
+
+            label {
+                font-size: 0.85rem;
+            }
+
+            .input-field, .submit-button {
+                font-size: 0.85rem;
+                padding: 10px;
+            }
+
+            .switch-page {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div id="container">
-        <img src="Orbis Arcane.png" alt="Orbis Arcana Logo" class="logo">
-        <h1 class="title">Orbis Arcana</h1>
-        <h2 class="subtitle">Register Your Team</h2>
 
-        <!-- 🔹 Form Grouping -->
-        <form id="registerForm">
-            <label for="teamName">Team Name:</label>
-            <input type="text" id="teamName" class="input-field" placeholder="Enter your team name" required>
+<div id="container">
+    <img src="Orbis Arcane.png" alt="Orbis Arcana Logo" class="logo">
+    <h1 class="title">Orbis Arcana</h1>
+    <h2 class="subtitle">Register Your Team</h2>
 
-            <label for="members">Team Members (comma-separated):</label>
-            <input type="text" id="members" class="input-field" placeholder="Member1, Member2, Member3" required>
+    <!-- 🔹 Form Grouping -->
+    <form id="registerForm">
+        <label for="teamName">Team Name:</label>
+        <input type="text" id="teamName" class="input-field" placeholder="Enter your team name" required>
 
-            <label for="email">Gmail:</label>
-            <input type="email" id="email" class="input-field" placeholder="Enter your Gmail" required>
+        <label for="members">Team Members (comma-separated):</label>
+        <input type="text" id="members" class="input-field" placeholder="Member1, Member2, Member3" required>
 
-            <label for="password">Password:</label>
-            <input type="password" id="password" class="input-field" placeholder="Enter your password" required>
+        <label for="email">Gmail:</label>
+        <input type="email" id="email" class="input-field" placeholder="Enter your Gmail" required>
 
-            <button id="registerBtn" type="submit" class="submit-button">Register</button>  <!-- ✅ Added ID -->
-        </form>
+        <label for="password">Password:</label>
+        <input type="password" id="password" class="input-field" placeholder="Enter your password" required>
 
-        <p id="result"></p>
+        <button id="registerBtn" type="submit" class="submit-button">Register</button>  <!-- ✅ Added ID -->
+    </form>
 
-        <p class="switch-page">Already have an account? <a href="login.html">Login here</a></p>
-    </div>
+    <p id="result"></p>
 
-    <!-- ✅ Add the script at the bottom to ensure DOM is fully loaded -->
-    <script type="module" src="register.js"></script>
+    <p class="switch-page">Already have an account? <a href="login.html">Login here</a></p>
+</div>
+
+<!-- ✅ Add the script at the bottom to ensure DOM is fully loaded -->
+<script type="module" src="register.js"></script>
+
 </body>
 </html>
