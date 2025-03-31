@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Orbis Arcana</title>
     <link rel="stylesheet" href="styles.css"> <!-- ✅ Apply game theme styles -->
-    <script type="module" src="register.js"></script>
 </head>
 <body>
     <div id="container">
@@ -27,12 +26,15 @@
             <label for="password">Password:</label>
             <input type="password" id="password" class="input-field" placeholder="Enter your password" required>
 
-            <button type="submit" class="submit-button">Register</button>
+            <button id="registerBtn" type="submit" class="submit-button">Register</button>  <!-- ✅ Added ID -->
         </form>
 
         <p id="result"></p>
 
         <p class="switch-page">Already have an account? <a href="login.html">Login here</a></p>
     </div>
+
+    <!-- ✅ Add the script at the bottom to ensure DOM is fully loaded -->
+    <script type="module" src="register.js"></script>
 </body>
 </html>
