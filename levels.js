@@ -89,9 +89,13 @@ onAuthStateChanged(auth, async (user) => {
         }
 
         const riddle = await getRandomRiddle();
-        if (riddle) {
+        const riddleElement = document.getElementById("riddleText");
+
+        if (riddle && riddleElement) {
             console.log(`🧩 Riddle: ${riddle.riddle}`);
-            document.getElementById("riddle").innerText = riddle.riddle;
+            riddleElement.innerText = riddle.riddle;  // ✅ Display the riddle
+        } else {
+            console.warn("⚠️ Riddle or element not found.");
         }
     }
 });
@@ -117,6 +121,7 @@ export async function getAnnouncement() {
 // ✅ Attach Submit Button Event
 document.addEventListener("DOMContentLoaded", () => {
     const submitButton = document.getElementById("submitAnswer");
+    
     if (submitButton) {
         submitButton.addEventListener("click", submitAnswer);
     } else {
