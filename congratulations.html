@@ -30,13 +30,14 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             animation: fadeIn 1.5s ease-in-out;
             max-width: 90%; /* Adjusted for small screens */
+            overflow: hidden; /* Prevent text overflow */
         }
 
         h1 {
-            font-size: 10vw; /* Responsive font size using viewport width */
+            font-size: 5rem; /* Fixed font size */
             margin: 20px 0;
             animation: bounce 1.5s ease infinite alternate;
-            white-space: nowrap; /* Prevents text overflow */
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -115,7 +116,7 @@
         /* ✅ Mobile-Friendly Design */
         @media (max-width: 768px) {
             h1 {
-                font-size: 15vw;  /* Adjusted for mobile */
+                font-size: 4rem;  /* Adjusted for mobile */
                 margin: 10px 0;
             }
 
@@ -132,7 +133,7 @@
         /* ✅ Portrait Mobile Adjustments */
         @media (max-width: 480px) {
             h1 {
-                font-size: 20vw;  /* Much smaller font size for portrait screens */
+                font-size: 3.5rem;  /* Smaller font size for portrait screens */
                 margin: 10px 0;
             }
 
