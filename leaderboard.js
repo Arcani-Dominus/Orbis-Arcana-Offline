@@ -41,14 +41,16 @@ async function loadLeaderboard() {
         }
 
         let leaderboardHTML = "<h3>🏆 Top 10 Teams</h3><ol>";
-        
-        snapshot.forEach((doc, index) => {
+        let count = 1;  // ✅ Manually track the rank
+
+        snapshot.forEach((doc) => {
             const team = doc.data();
             const teamName = team.teamName || "Unknown Team";
             const level = team.currentLevel || 0;
 
-            // ✅ Numbered ranking without #
-            leaderboardHTML += `<li>${index + 1}. ${teamName} (Level ${level})</li>`;
+            // ✅ Display proper numbering without NaN
+            leaderboardHTML += `<li>${count}. ${teamName} (Level ${level})</li>`;
+            count++;
         });
 
         leaderboardHTML += "</ol>";
