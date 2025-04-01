@@ -6,7 +6,7 @@
     <title>Congratulations!</title>
     <link rel="stylesheet" href="styles.css">
     <style>
-        /* ✅ Page styling */
+        /* ✅ Page Styling */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -16,31 +16,38 @@
             justify-content: center;
             align-items: center;
             background: linear-gradient(135deg, #4CAF50, #2196F3);
-            overflow: hidden;
             color: white;
+            overflow: hidden; /* Prevent scrolling */
+            box-sizing: border-box;
         }
 
         #container {
             text-align: center;
             z-index: 2;
+            max-width: 90%;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             animation: fadeIn 1.5s ease-in-out;
         }
 
         h1 {
-            font-size: 4rem;
-            margin: 0;
+            font-size: 2.5rem;    /* ✅ Responsive size */
+            margin: 20px 0;
             animation: bounce 1.5s ease infinite alternate;
+            word-wrap: break-word; /* Prevents overflow */
         }
 
         p {
-            font-size: 1.5rem;
-            margin: 20px 0;
+            font-size: 1.2rem;
+            margin: 15px 0;
         }
 
         .btn {
             display: inline-block;
-            padding: 15px 30px;
-            font-size: 1.2rem;
+            padding: 12px 25px;
+            font-size: 1.1rem;
             color: white;
             background: #ff9800;
             text-decoration: none;
@@ -71,15 +78,14 @@
                 transform: translateY(0);
             }
             to {
-                transform: translateY(-20px);
+                transform: translateY(-15px);
             }
         }
 
-        /* ✅ Confetti animation */
+        /* ✅ Confetti Animation */
         .confetti {
             position: fixed;
             top: 0;
-            left: 0;
             width: 10px;
             height: 10px;
             background: #ffeb3b;
@@ -104,6 +110,22 @@
             }
         }
 
+        /* ✅ Mobile-Friendly Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;  /* Smaller on mobile */
+            }
+            
+            p {
+                font-size: 1rem; 
+            }
+
+            .btn {
+                font-size: 1rem;
+                padding: 10px 20px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -113,32 +135,4 @@
     <p>You have successfully completed all the levels of Orbis Arcana!</p>
     <p>Thank you for participating in the treasure hunt. 🎯</p>
     <a href="index.html" class="btn">🏠 Go to Home</a>
-</div>
-
-<script>
-    // ✅ Create confetti
-    function createConfetti() {
-        const confettiCount = 100;
-        const container = document.body;
-
-        for (let i = 0; i < confettiCount; i++) {
-            const confetti = document.createElement("div");
-            confetti.classList.add("confetti");
-            confetti.style.left = `${Math.random() * 100}vw`;
-            confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
-            confetti.style.animationDelay = `${Math.random()}s`;
-            confetti.style.width = `${Math.random() * 10 + 5}px`;
-            confetti.style.height = `${Math.random() * 10 + 5}px`;
-            container.appendChild(confetti);
-
-            // Remove confetti after animation ends
-            setTimeout(() => confetti.remove(), 5000);
-        }
-    }
-
-    // ✅ Trigger confetti animation on load
-    window.onload = createConfetti;
-</script>
-
-</body>
-</html>
+</div
