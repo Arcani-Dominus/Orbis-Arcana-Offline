@@ -41,17 +41,14 @@ async function loadLeaderboard() {
         }
 
         let leaderboardHTML = "<h3>🏆 Top 10 Teams</h3><ol>";
-        let count = 0;
-
-        snapshot.forEach((doc) => {
-            if (count >= 10) return;
-
+        
+        snapshot.forEach((doc, index) => {
             const team = doc.data();
             const teamName = team.teamName || "Unknown Team";
             const level = team.currentLevel || 0;
 
-            leaderboardHTML += `<li>#${count + 1} ${teamName} (Level ${level})</li>`;
-            count++;
+            // ✅ Numbered ranking without #
+            leaderboardHTML += `<li>${index + 1}. ${teamName} (Level ${level})</li>`;
         });
 
         leaderboardHTML += "</ol>";
@@ -77,4 +74,3 @@ leaderboardButton.addEventListener("click", async () => {
 
 // ✅ Export the leaderboard function
 export { loadLeaderboard };
-
