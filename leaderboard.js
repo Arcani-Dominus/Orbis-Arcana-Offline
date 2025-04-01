@@ -40,7 +40,7 @@ async function loadLeaderboard() {
             return;
         }
 
-        let leaderboardHTML = "<h3>🏆 Top 10 Teams</h3><ol>";
+        let leaderboardHTML = "<h3>🏆 Top 10 Teams</h3><ul>";  // ✅ Use <ul> to avoid double numbering
         let count = 1;  // ✅ Manually track the rank
 
         snapshot.forEach((doc) => {
@@ -48,12 +48,12 @@ async function loadLeaderboard() {
             const teamName = team.teamName || "Unknown Team";
             const level = team.currentLevel || 0;
 
-            // ✅ Display proper numbering without NaN
+            // ✅ Display proper numbering
             leaderboardHTML += `<li>${count}. ${teamName} (Level ${level})</li>`;
             count++;
         });
 
-        leaderboardHTML += "</ol>";
+        leaderboardHTML += "</ul>";
         leaderboardElement.innerHTML = leaderboardHTML;
 
     } catch (error) {
