@@ -24,22 +24,21 @@
         #container {
             text-align: center;
             z-index: 2;
-            max-width: 90%;
-            padding: 30px;
+            padding: 20px;
             background: rgba(0, 0, 0, 0.7);
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             animation: fadeIn 1.5s ease-in-out;
+            max-width: 90%; /* Adjusted for small screens */
         }
 
         h1 {
-            font-size: 4rem;    /* ✅ Adjusted for better responsiveness */
+            font-size: 10vw; /* Responsive font size using viewport width */
             margin: 20px 0;
             animation: bounce 1.5s ease infinite alternate;
-            word-wrap: break-word; /* Prevents overflow */
-            white-space: nowrap; /* Ensures text stays in one line */
+            white-space: nowrap; /* Prevents text overflow */
             overflow: hidden;
-            text-overflow: ellipsis; /* Prevents text from overflowing */
+            text-overflow: ellipsis;
         }
 
         p {
@@ -116,12 +115,12 @@
         /* ✅ Mobile-Friendly Design */
         @media (max-width: 768px) {
             h1 {
-                font-size: 2.5rem;  /* Adjusted for mobile */
-                margin: 15px 0;
+                font-size: 15vw;  /* Adjusted for mobile */
+                margin: 10px 0;
             }
-            
+
             p {
-                font-size: 1rem; 
+                font-size: 1rem;
             }
 
             .btn {
@@ -133,12 +132,12 @@
         /* ✅ Portrait Mobile Adjustments */
         @media (max-width: 480px) {
             h1 {
-                font-size: 1.8rem;  /* Even smaller font size for portrait screens */
+                font-size: 20vw;  /* Much smaller font size for portrait screens */
                 margin: 10px 0;
             }
 
             p {
-                font-size: 0.9rem;  /* Slightly smaller text */
+                font-size: 0.9rem;
             }
 
             .btn {
@@ -146,7 +145,6 @@
                 padding: 8px 18px;
             }
         }
-
     </style>
 </head>
 <body>
