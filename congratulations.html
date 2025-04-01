@@ -31,13 +31,14 @@
             animation: fadeIn 1.5s ease-in-out;
             max-width: 90%; /* Adjusted for small screens */
             overflow: hidden; /* Prevent text overflow */
+            word-wrap: break-word; /* Ensure long text wraps */
         }
 
         h1 {
-            font-size: 5rem; /* Fixed font size */
+            font-size: 4rem; /* Fixed font size */
             margin: 20px 0;
             animation: bounce 1.5s ease infinite alternate;
-            white-space: nowrap;
+            white-space: normal;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -85,38 +86,10 @@
             }
         }
 
-        /* ✅ Confetti Animation */
-        .confetti {
-            position: fixed;
-            top: 0;
-            width: 10px;
-            height: 10px;
-            background: #ffeb3b;
-            opacity: 0.9;
-            animation: confetti-fall 4s linear infinite;
-        }
-
-        .confetti:nth-child(odd) {
-            background: #ff5722;
-        }
-
-        .confetti:nth-child(even) {
-            background: #4caf50;
-        }
-
-        @keyframes confetti-fall {
-            0% {
-                transform: translateY(-10vh) rotate(0deg);
-            }
-            100% {
-                transform: translateY(100vh) rotate(720deg);
-            }
-        }
-
         /* ✅ Mobile-Friendly Design */
         @media (max-width: 768px) {
             h1 {
-                font-size: 4rem;  /* Adjusted for mobile */
+                font-size: 3.5rem;  /* Adjusted for mobile */
                 margin: 10px 0;
             }
 
@@ -133,7 +106,7 @@
         /* ✅ Portrait Mobile Adjustments */
         @media (max-width: 480px) {
             h1 {
-                font-size: 3.5rem;  /* Smaller font size for portrait screens */
+                font-size: 3rem;  /* Smaller font size for portrait screens */
                 margin: 10px 0;
             }
 
