@@ -127,5 +127,19 @@
             window.location.href = "register.html";
         });
     </script>
+    <audio id="bg-audio" autoplay loop>
+  <source src="sounds/thrill-bg.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
+
+<script>
+  // Ensure the audio plays after a user interaction (bypasses Chrome autoplay block)
+  document.addEventListener('click', function () {
+    const audio = document.getElementById('bg-audio');
+    if (audio.paused) {
+      audio.play().catch((e) => console.log('Autoplay blocked:', e));
+    }
+  });
+</script>
 </body>
 </html>
