@@ -173,7 +173,20 @@
 
     <p class="switch-page">Already have an account? <a href="login.html">Login here</a></p>
 </div>
+<audio id="bg-audio" autoplay loop>
+  <source src="sounds/thrill-bg.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
 
+<script>
+  // Ensure the audio plays after a user interaction (bypasses Chrome autoplay block)
+  document.addEventListener('click', function () {
+    const audio = document.getElementById('bg-audio');
+    if (audio.paused) {
+      audio.play().catch((e) => console.log('Autoplay blocked:', e));
+    }
+  });
+</script>
 <!-- ✅ Add the script at the bottom to ensure DOM is fully loaded -->
 <script type="module" src="register.js"></script>
 
