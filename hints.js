@@ -1,6 +1,5 @@
-// ✅ Updated hints.js (global 3-hint system)
 import { db } from "./firebase-config.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
 export async function getHint(level) {
     const hintElement = document.getElementById("hintDisplay");
@@ -11,15 +10,34 @@ export async function getHint(level) {
         return;
     }
 
-    // ✅ Global hint usage counter
-    let totalHintsUsed = parseInt(localStorage.getItem("totalHintsUsed")) || 0;
+    const teamId = localStorage.getItem("teamId");
+    if (!teamId) {
+        console.error("❌ No teamId found in localStorage.");
+        return;
+    }
 
-    // ✅ Track if hint already used for this level
-    const usedLevelsKey = "hintUsedLevels";
-    let usedLevels = JSON.parse(localStorage.getItem(usedLevelsKey)) || [];
+    const teamRef = doc(db, "teams", teamId);
+    const teamSnap = await getDoc(teamRef);
 
+    if (!teamSnap.exists()) {
+        console.error("❌ Team not found in Firestore.");
+        return;
+    }
+
+    let teamData = teamSnap.data();
+    let totalHintsUsed = teamData.hintsUsed || 0;
+    let usedLevels = teamData.hintUsedLevels || [];
+
+    // 🔒 Already maxed out?
+    if (totalHintsUsed >= 3) {
+        hintElement.innerText = "⚠️ You’ve already used all 3 hints for the game!";
+        hintBtn.disabled = true;
+        hintBtn.style.opacity = "0.5";
+        return;
+    }
+
+    // 🔄 If this level’s hint was already used → show again but don’t count
     if (usedLevels.includes(level)) {
-        // Already used for this level → just show again without counting
         const storedRiddle = localStorage.getItem("currentRiddle");
         if (storedRiddle) {
             const currentRiddle = JSON.parse(storedRiddle);
@@ -30,14 +48,6 @@ export async function getHint(level) {
         }
     }
 
-    if (totalHintsUsed >= 3) {
-        hintElement.innerText = "⚠️ You’ve already used all 3 hints for the game!";
-        hintBtn.disabled = true;
-        hintBtn.style.opacity = "0.5";
-        return;
-    }
-
-    // ✅ Show hint and count this level as "used"
     try {
         const storedRiddle = localStorage.getItem("currentRiddle");
 
@@ -45,11 +55,14 @@ export async function getHint(level) {
             const currentRiddle = JSON.parse(storedRiddle);
 
             if (currentRiddle.hints) {
+                // ✅ Update Firestore usage count
                 totalHintsUsed++;
-                localStorage.setItem("totalHintsUsed", totalHintsUsed);
-
                 usedLevels.push(level);
-                localStorage.setItem(usedLevelsKey, JSON.stringify(usedLevels));
+
+                await updateDoc(teamRef, {
+                    hintsUsed: totalHintsUsed,
+                    hintUsedLevels: usedLevels
+                });
 
                 hintElement.innerText = `💡 Hint: ${currentRiddle.hints}`;
                 console.log(`💡 Total hints used: ${totalHintsUsed}/3`);
@@ -62,19 +75,20 @@ export async function getHint(level) {
             }
         }
 
-        // 🔥 Fallback: Fetch from Firestore
+        // 🔥 Fallback: Fetch from Firestore if not in localStorage
         const currentRiddleId = storedRiddle ? JSON.parse(storedRiddle).id : null;
-
         if (currentRiddleId) {
             const riddleRef = doc(db, "riddles", currentRiddleId);
             const riddleSnap = await getDoc(riddleRef);
 
             if (riddleSnap.exists() && riddleSnap.data().hints) {
                 totalHintsUsed++;
-                localStorage.setItem("totalHintsUsed", totalHintsUsed);
-
                 usedLevels.push(level);
-                localStorage.setItem(usedLevelsKey, JSON.stringify(usedLevels));
+
+                await updateDoc(teamRef, {
+                    hintsUsed: totalHintsUsed,
+                    hintUsedLevels: usedLevels
+                });
 
                 hintElement.innerText = `💡 Hint: ${riddleSnap.data().hints}`;
                 console.log(`💡 Total hints used: ${totalHintsUsed}/3`);
