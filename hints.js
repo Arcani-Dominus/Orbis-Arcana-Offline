@@ -1,88 +1,120 @@
-// ✅ Import Firestore dependencies
-import { db, auth } from "./firebase-config.js";
+// hints.js — global 3-hint limit, per-level no double count, robust DOM + data handling
+
+import { db } from "./firebase-config.js";
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-auth.js";
 
-// ✅ Get hint function
-export async function getHint(level) {
-    const teamId = localStorage.getItem("teamId");
-    if (!teamId) {
-        console.error("❌ Team ID not found in localStorage.");
-        return;
-    }
+// Helper: get the visible hint text from localStorage's currentRiddle
+function getHintFromLocalStorage() {
+  const stored = localStorage.getItem("currentRiddle");
+  if (!stored) return null;
 
-    const hintDisplay = document.getElementById("hintDisplay");
-    if (!hintDisplay) {
-        console.error("❌ Hint display element not found in DOM.");
-        return;
-    }
+  const r = JSON.parse(stored);
+  const raw = r?.hints;
 
-    try {
-        // ✅ Get team document
-        const teamRef = doc(db, "teams", teamId);
-        const teamSnap = await getDoc(teamRef);
-
-        if (!teamSnap.exists()) {
-            console.error("❌ Team document not found.");
-            return;
-        }
-
-        let teamData = teamSnap.data();
-        let usedHints = teamData.usedHints || 0;
-
-        // ✅ If already reached limit, stop
-        if (usedHints >= 3) {
-            hintDisplay.innerText = "⚠️ You have already used all 3 hints for this game.";
-            return;
-        }
-
-        // ✅ Check if current riddle is in localStorage
-        const storedRiddle = localStorage.getItem("currentRiddle");
-        if (!storedRiddle) {
-            console.error("❌ No riddle in localStorage.");
-            hintDisplay.innerText = "⚠️ No riddle loaded.";
-            return;
-        }
-
-        const currentRiddle = JSON.parse(storedRiddle);
-
-        // ✅ If hint already shown before for this riddle, just re-show it
-        if (currentRiddle.shownHint) {
-            console.log("📌 Hint already revealed for this riddle, reusing it.");
-            hintDisplay.innerText = currentRiddle.shownHint;
-            return;
-        }
-
-        // ✅ Otherwise, reveal the hint (use first hint for now)
-        let hint = "⚠️ No hint available.";
-        if (currentRiddle.hints && currentRiddle.hints.length > 0) {
-            hint = currentRiddle.hints[0]; // 🎯 you can randomize or rotate if needed
-        }
-
-        // ✅ Update localStorage to remember that hint is already shown
-        currentRiddle.shownHint = hint;
-        localStorage.setItem("currentRiddle", JSON.stringify(currentRiddle));
-
-        // ✅ Update Firestore: increment hint count ONCE
-        await updateDoc(teamRef, {
-            usedHints: usedHints + 1
-        });
-
-        // ✅ Show hint
-        hintDisplay.innerText = hint;
-
-    } catch (error) {
-        console.error("❌ Error fetching hint:", error);
-        const hintDisplay = document.getElementById("hintDisplay");
-        if (hintDisplay) {
-            hintDisplay.innerText = "❌ Error loading hint.";
-        }
-    }
+  // Support string or array
+  if (Array.isArray(raw)) return raw[0] ?? null;
+  if (typeof raw === "string") return raw.length ? raw : null;
+  return null;
 }
 
-// ✅ Reset hint usage on new login (optional safeguard)
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        console.log("✅ User logged in, hint system ready.");
+// Helper: show text in the UI safely
+function setHintText(text) {
+  const el = document.getElementById("hintDisplay"); // ✅ must exist in level.html
+  if (!el) {
+    console.error("❌ #hintDisplay not found in DOM.");
+    return false;
+  }
+  el.innerText = text;
+  return true;
+}
+
+// Helper: disable the button if needed
+function updateHintButtonDisabled(disabled) {
+  const btn = document.getElementById("getHintBtn");
+  if (btn) {
+    btn.disabled = !!disabled;
+    btn.style.opacity = disabled ? "0.5" : "";
+  }
+}
+
+// Main: get a hint with global limit and per-level no double count
+export async function getHint(level) {
+  // Normalize level as string to prevent "1" vs 1 mismatches across devices
+  const normalizedLevel = String(level ?? "").trim();
+
+  // DOM safety
+  if (!document.getElementById("hintDisplay")) {
+    console.error("❌ #hintDisplay missing. Ensure your HTML has <p id=\"hintDisplay\"></p>");
+    return;
+  }
+
+  const teamId = localStorage.getItem("teamId");
+  if (!teamId) {
+    setHintText("❌ Team not found. Please sign in again.");
+    return;
+  }
+
+  const teamRef = doc(db, "teams", teamId);
+
+  try {
+    const teamSnap = await getDoc(teamRef);
+    if (!teamSnap.exists()) {
+      setHintText("❌ Team data not found.");
+      return;
     }
-});
+
+    // Read counters from Firestore
+    const data = teamSnap.data() || {};
+    const hintsUsed = Number(data.hintsUsed || 0);          // global counter (0..3)
+    const hintUsedLevels = Array.isArray(data.hintUsedLevels)
+      ? data.hintUsedLevels.map(String)
+      : [];
+
+    // If this level already consumed a hint → just re-show without counting
+    if (normalizedLevel && hintUsedLevels.includes(normalizedLevel)) {
+      const cachedHint = getHintFromLocalStorage();
+      if (cachedHint) {
+        setHintText(`💡 Hint: ${cachedHint}`);
+      } else {
+        // Fallback if local cache missing
+        setHintText("💡 Hint already used for this level.");
+      }
+      return;
+    }
+
+    // If global cap reached → block
+    if (hintsUsed >= 3) {
+      setHintText("⚠️ You’ve already used all 3 hints for the game!");
+      updateHintButtonDisabled(true);
+      return;
+    }
+
+    // Pull hint for the current riddle (prefer local cache)
+    const hintText = getHintFromLocalStorage();
+    if (!hintText) {
+      setHintText("⚠️ No hint available for this riddle.");
+      return;
+    }
+
+    // Show hint immediately for good UX
+    setHintText(`💡 Hint: ${hintText}`);
+
+    // Update Firestore: increment global counter and mark this level as used (no duplicates)
+    const newCount = hintsUsed + 1;
+    const newLevels = normalizedLevel
+      ? Array.from(new Set([...hintUsedLevels, normalizedLevel]))
+      : hintUsedLevels;
+
+    await updateDoc(teamRef, {
+      hintsUsed: newCount,
+      hintUsedLevels: newLevels
+    });
+
+    // If this was the third hint, disable the button
+    if (newCount >= 3) updateHintButtonDisabled(true);
+
+  } catch (err) {
+    console.error("❌ Error fetching/updating hint:", err);
+    setHintText("❌ Error loading hint.");
+  }
+}
