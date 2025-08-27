@@ -80,9 +80,7 @@
             const hintButton = document.getElementById("getHintBtn");
             if (hintButton) {
                 hintButton.addEventListener("click", async () => {
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const level = parseInt(urlParams.get("level")) || 1;
-                    await getHint(level); // Call getHint from hints.js
+                    await getHint(); // ✅ Fixed: no level param, handled in hints.js
                 });
             }
         });
