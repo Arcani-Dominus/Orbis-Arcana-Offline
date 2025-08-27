@@ -14,6 +14,7 @@ async function getHint() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const level = parseInt(urlParams.get("level")) || 1;
+    const levelKey = level.toString(); // 🔑 ensure string keys
     const playerRef = doc(db, "teams", user.uid);
 
     try {
@@ -51,7 +52,7 @@ async function getHint() {
         }
 
         // ✅ If already unlocked → just show it
-        if (unlockedHints[level]) {
+        if (unlockedHints[levelKey]) {
             hintDisplay.innerText = `💡 Hint: ${hint}`;
             return;
         }
@@ -59,7 +60,7 @@ async function getHint() {
         // ✅ Unlock hint → consume one global hint and mark this level as unlocked
         await updateDoc(playerRef, {
             hintsUsed: usedHints + 1,
-            [`hintsUnlocked.${level}`]: true
+            [`hintsUnlocked.${levelKey}`]: true
         });
 
         hintDisplay.innerText = `💡 Hint: ${hint}`;
