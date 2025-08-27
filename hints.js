@@ -34,7 +34,7 @@ async function getHint() {
 
         if (unlockedHints[level]) {
             // Already unlocked: just show it
-            const riddleRef = doc(db, "answers", level.toString());
+            const riddleRef = doc(db, "riddles", level.toString());
             const riddleSnap = await getDoc(riddleRef);
             if (riddleSnap.exists()) {
                 const hints = riddleSnap.data().hints || [];
@@ -44,7 +44,7 @@ async function getHint() {
         }
 
         // Unlock hint for this level
-        const riddleRef = doc(db, "answers", level.toString());
+        const riddleRef = doc(db, "riddles", level.toString());
         const riddleSnap = await getDoc(riddleRef);
         if (!riddleSnap.exists()) {
             hintDisplay.innerText = "⚠️ No hint found for this level.";
