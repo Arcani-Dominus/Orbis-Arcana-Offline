@@ -4,7 +4,6 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/fi
 import { 
     getDocs, collection, doc, updateDoc, serverTimestamp, getDoc
 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
-import { getHint } from "./hints.js"; // ✅ Import hint function
 
 const feedback = document.getElementById("feedback");
 const answerInput = document.getElementById("answerInput");
@@ -43,11 +42,11 @@ export async function loadRiddle() {
         }
 
         const riddles = [];
-        snapshot.forEach((doc) => {
+        snapshot.forEach((docSnap) => {
             riddles.push({
-                id: doc.id,
-                riddle: doc.data().riddle,
-                answer: doc.data().answer.toLowerCase()
+                id: docSnap.id,
+                riddle: docSnap.data().riddle,
+                answer: docSnap.data().answer.toLowerCase()
             });
         });
 
@@ -210,16 +209,10 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        await loadRiddle();  // ✅ Load the riddle once
-        await showCurrentLevel();  // ✅ Display the current level
+        await loadRiddle();       // ✅ Load the riddle once
+        await showCurrentLevel(); // ✅ Display the current level
 
-        // ✅ Attach Hint Button Event
-        const hintButton = document.getElementById("getHintBtn");
-        if (hintButton) {
-            hintButton.addEventListener("click", async () => {
-                const currentLevel = document.getElementById("levelTitle").innerText.replace("Level ", "");
-                await getHint(parseInt(currentLevel)); // Call getHint from hints.js
-            });
-        }
+        // 🚫 Removed duplicate hintButton event listener
+        // The correct one is already defined inside level.html
     }
 });
