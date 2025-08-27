@@ -32,39 +32,37 @@ async function getHint() {
             return;
         }
 
-        if (unlockedHints[level]) {
-            // Already unlocked: just show it
-            const riddleRef = doc(db, "riddles", level.toString());
-            const riddleSnap = await getDoc(riddleRef);
-            if (riddleSnap.exists()) {
-                const hints = riddleSnap.data().hints || [];
-                hintDisplay.innerText = `💡 Hint: ${hints[0] || "No hint available"}`;
-            }
-            return;
-        }
-
-        // Unlock hint for this level
-        const riddleRef = doc(db, "riddles", level.toString());
+        // Correct doc path: randomRiddle1, randomRiddle2, ...
+        const riddleRef = doc(db, "riddles", `randomRiddle${level}`);
         const riddleSnap = await getDoc(riddleRef);
+
         if (!riddleSnap.exists()) {
             hintDisplay.innerText = "⚠️ No hint found for this level.";
             return;
         }
 
-        const hints = riddleSnap.data().hints || [];
-        if (hints.length === 0) {
+        // Handle hints as STRING (not array)
+        const hints = riddleSnap.data().hints || "";
+        const hint = Array.isArray(hints) ? hints[0] : hints;
+
+        if (!hint) {
             hintDisplay.innerText = "⚠️ No hints set for this riddle.";
             return;
         }
 
-        const hint = hints[0];
-        hintDisplay.innerText = `💡 Hint: ${hint}`;
+        // If already unlocked → just show it
+        if (unlockedHints[level]) {
+            hintDisplay.innerText = `💡 Hint: ${hint}`;
+            return;
+        }
 
-        // Update Firestore: consume one global hint and mark this level as unlocked
+        // Unlock hint → consume one global hint and mark this level as unlocked
         await updateDoc(playerRef, {
             hintsUsed: usedHints + 1,
             [`hintsUnlocked.${level}`]: true
         });
+
+        hintDisplay.innerText = `💡 Hint: ${hint}`;
 
         // Disable button if all hints used
         if (usedHints + 1 >= 3) {
