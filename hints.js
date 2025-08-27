@@ -14,7 +14,7 @@ async function getHint() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const level = parseInt(urlParams.get("level")) || 1;
-    const playerRef = doc(db, "players", user.uid);
+    const playerRef = doc(db, "teams", user.uid);
 
     try {
         const playerSnap = await getDoc(playerRef);
