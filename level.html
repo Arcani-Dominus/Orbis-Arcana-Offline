@@ -18,6 +18,10 @@
         <button id="submitAnswer" class="submit-button">Submit</button>
         <p id="feedback"></p>
 
+        <!-- 💡 Hint Section -->
+        <button id="getHintBtn">Get Hint</button>
+        <p id="hintDisplay"></p>
+
         <!-- 📢 Announcements Section -->
         <p id="announcements">Loading announcements...</p>
 
@@ -32,11 +36,13 @@
     <script type="module" src="./firebase-config.js"></script>
     <script type="module" src="./leaderboard.js?v=1.0"></script>
     <script type="module" src="./levels.js"></script>
+    <script type="module" src="./hints.js"></script> <!-- Added hints.js -->
 
-    <!-- ✅ Script for Riddles, Answers, and Announcements -->
+    <!-- ✅ Script for Riddles, Answers, Announcements & Hint -->
     <script type="module">
         import { loadRiddle, submitAnswer, getAnnouncement, showCurrentLevel } from "./levels.js";
-        import { loadLeaderboard } from "./leaderboard.js";  
+        import { loadLeaderboard } from "./leaderboard.js";
+        import { getHint } from "./hints.js";  // Import hint function
 
         let leaderboardVisible = false;
 
@@ -66,7 +72,17 @@
             const submitButton = document.getElementById("submitAnswer");
             if (submitButton) {
                 submitButton.addEventListener("click", async () => {
-                    await submitAnswer();     // ✅ No parameter required
+                    await submitAnswer();
+                });
+            }
+
+            // ✅ Event listener for hint button
+            const hintButton = document.getElementById("getHintBtn");
+            if (hintButton) {
+                hintButton.addEventListener("click", async () => {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const level = parseInt(urlParams.get("level")) || 1;
+                    await getHint(level); // Call getHint from hints.js
                 });
             }
         });
@@ -88,7 +104,6 @@
                 announcementElement.innerText = "Failed to load announcements.";
             }
         }
-
     </script>
 </body>
 </html>
