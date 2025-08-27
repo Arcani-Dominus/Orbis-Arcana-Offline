@@ -47,8 +47,8 @@ export async function loadRiddle() {
             riddles.push({
                 id: doc.id,
                 riddle: doc.data().riddle,
-                answer: doc.data().answer.toLowerCase(), // normalize for checking
-                hints: doc.data().hints || "" // ✅ include hints
+                answer: doc.data().answer.toLowerCase(),
+                hints: doc.data().hints || null   // ✅ make sure hints are included
             });
         });
 
@@ -68,11 +68,17 @@ export async function loadRiddle() {
             return null;
         }
 
-        // ✅ Select the next unsolved riddle (instead of random)
-        const selectedRiddle = unsolvedRiddles[0];
+        // ✅ Select a random unsolved riddle
+        const randomIndex = Math.floor(Math.random() * unsolvedRiddles.length);
+        const selectedRiddle = unsolvedRiddles[randomIndex];
 
-        // ✅ Store the riddle in localStorage
-        localStorage.setItem("currentRiddle", JSON.stringify(selectedRiddle));
+        // ✅ Store the riddle in localStorage (now with hints included)
+        localStorage.setItem("currentRiddle", JSON.stringify({
+            id: selectedRiddle.id,
+            riddle: selectedRiddle.riddle,
+            answer: selectedRiddle.answer,
+            hints: selectedRiddle.hints || null
+        }));
 
         // ✅ Display the riddle
         if (riddleElement) {
