@@ -1,9 +1,14 @@
-// ✅ Updated hints.js
+// ✅ Updated hints.js (fixed hint element id)
 import { db } from "./firebase-config.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
 
 export async function getHint(level) {
-    const hintElement = document.getElementById("hintText");
+    const hintElement = document.getElementById("hintDisplay"); // ✅ FIXED
+
+    if (!hintElement) {
+        console.error("❌ Hint element not found in HTML.");
+        return;
+    }
 
     // ✅ Get the riddle from localStorage first
     const storedRiddle = localStorage.getItem("currentRiddle");
@@ -22,14 +27,6 @@ export async function getHint(level) {
     try {
         console.log("⚠️ Hint not in localStorage, checking Firestore...");
 
-        // We use the level number -> need team progress to map properly
-        const teamId = localStorage.getItem("teamId");
-        if (!teamId) {
-            hintElement.innerText = "❌ Team not found.";
-            return;
-        }
-
-        // Load current riddle from Firestore (doc name from localStorage id)
         const currentRiddleId = storedRiddle ? JSON.parse(storedRiddle).id : null;
 
         if (currentRiddleId) {
