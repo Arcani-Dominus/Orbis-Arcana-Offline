@@ -32,7 +32,7 @@ async function getHint() {
             return;
         }
 
-        // Correct doc path: randomRiddle1, randomRiddle2, ...
+        // ✅ Always fetch the correct riddle doc for this level
         const riddleRef = doc(db, "riddles", `randomRiddle${level}`);
         const riddleSnap = await getDoc(riddleRef);
 
@@ -41,7 +41,7 @@ async function getHint() {
             return;
         }
 
-        // Handle hints as STRING (not array)
+        // ✅ Get hint (string or array)
         const hints = riddleSnap.data().hints || "";
         const hint = Array.isArray(hints) ? hints[0] : hints;
 
@@ -50,13 +50,13 @@ async function getHint() {
             return;
         }
 
-        // If already unlocked → just show it
+        // ✅ If already unlocked → just show it
         if (unlockedHints[level]) {
             hintDisplay.innerText = `💡 Hint: ${hint}`;
             return;
         }
 
-        // Unlock hint → consume one global hint and mark this level as unlocked
+        // ✅ Unlock hint → consume one global hint and mark this level as unlocked
         await updateDoc(playerRef, {
             hintsUsed: usedHints + 1,
             [`hintsUnlocked.${level}`]: true
