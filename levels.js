@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/fi
 import { 
     getDocs, collection, doc, updateDoc, serverTimestamp, getDoc
 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+import { getHint } from "./hints.js"; // ✅ Import hint function
 
 const feedback = document.getElementById("feedback");
 const answerInput = document.getElementById("answerInput");
@@ -211,5 +212,14 @@ onAuthStateChanged(auth, async (user) => {
 
         await loadRiddle();  // ✅ Load the riddle once
         await showCurrentLevel();  // ✅ Display the current level
+
+        // ✅ Attach Hint Button Event
+        const hintButton = document.getElementById("getHintBtn");
+        if (hintButton) {
+            hintButton.addEventListener("click", async () => {
+                const currentLevel = document.getElementById("levelTitle").innerText.replace("Level ", "");
+                await getHint(parseInt(currentLevel)); // Call getHint from hints.js
+            });
+        }
     }
 });
