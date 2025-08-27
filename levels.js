@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.2/fi
 import { 
     getDocs, collection, doc, updateDoc, serverTimestamp, getDoc
 } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
+import { getHint } from "./hints.js"; // ✅ Import hint function
 
 const feedback = document.getElementById("feedback");
 const answerInput = document.getElementById("answerInput");
@@ -42,11 +43,12 @@ export async function loadRiddle() {
         }
 
         const riddles = [];
-        snapshot.forEach((docSnap) => {
+        snapshot.forEach((doc) => {
             riddles.push({
-                id: docSnap.id,
-                riddle: docSnap.data().riddle,
-                answer: docSnap.data().answer.toLowerCase()
+                id: doc.id,
+                riddle: doc.data().riddle,
+                answer: doc.data().answer.toLowerCase(), // normalize for checking
+                hints: doc.data().hints || "" // ✅ include hints
             });
         });
 
@@ -66,9 +68,8 @@ export async function loadRiddle() {
             return null;
         }
 
-        // ✅ Select a random unsolved riddle
-        const randomIndex = Math.floor(Math.random() * unsolvedRiddles.length);
-        const selectedRiddle = unsolvedRiddles[randomIndex];
+        // ✅ Select the next unsolved riddle (instead of random)
+        const selectedRiddle = unsolvedRiddles[0];
 
         // ✅ Store the riddle in localStorage
         localStorage.setItem("currentRiddle", JSON.stringify(selectedRiddle));
@@ -209,10 +210,16 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        await loadRiddle();       // ✅ Load the riddle once
-        await showCurrentLevel(); // ✅ Display the current level
+        await loadRiddle();  // ✅ Load the riddle once
+        await showCurrentLevel();  // ✅ Display the current level
 
-        // 🚫 Removed duplicate hintButton event listener
-        // The correct one is already defined inside level.html
+        // ✅ Attach Hint Button Event
+        const hintButton = document.getElementById("getHintBtn");
+        if (hintButton) {
+            hintButton.addEventListener("click", async () => {
+                const currentLevel = document.getElementById("levelTitle").innerText.replace("Level ", "");
+                await getHint(parseInt(currentLevel)); // Call getHint from hints.js
+            });
+        }
     }
 });
