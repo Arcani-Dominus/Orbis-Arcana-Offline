@@ -36,9 +36,9 @@ async function getHint() {
             return;
         }
 
-        // Fetch riddle doc
+        // ✅ Fetch riddle doc (force fresh from server, not cache)
         const riddleRef = doc(db, "riddles", `randomRiddle${level}`);
-        const riddleSnap = await getDoc(riddleRef);
+        const riddleSnap = await getDoc(riddleRef, { source: "server" });
 
         if (!riddleSnap.exists()) {
             hintDisplay.innerText = "⚠️ No hint found for this level.";
@@ -46,9 +46,12 @@ async function getHint() {
             return;
         }
 
-        // Get hint
-        const hints = riddleSnap.data().hints || "";
-        console.log("👉 Firestore returned hints:", hints);
+        // ✅ Log full document data
+        const data = riddleSnap.data();
+        console.log("👉 Raw Firestore doc data:", data);
+
+        const hints = data.hints || "";
+        console.log("👉 Processed hint:", hints);
 
         const hint = Array.isArray(hints) ? hints[0] : hints;
 
