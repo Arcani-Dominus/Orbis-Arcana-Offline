@@ -1,4 +1,4 @@
-// hints.js — global 3-hint limit, per-level no double count, robust DOM + data handling
+// hints.js — fixed: global 3-hint cap, per-level no double count ✅
 
 import { db } from "./firebase-config.js";
 import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore.js";
@@ -19,7 +19,7 @@ function getHintFromLocalStorage() {
 
 // Helper: show text in the UI safely
 function setHintText(text) {
-  const el = document.getElementById("hintDisplay"); // ✅ must exist in level.html
+  const el = document.getElementById("hintDisplay");
   if (!el) {
     console.error("❌ #hintDisplay not found in DOM.");
     return false;
@@ -39,12 +39,10 @@ function updateHintButtonDisabled(disabled) {
 
 // Main: get a hint with global limit and per-level no double count
 export async function getHint(level) {
-  // Normalize level as string to prevent "1" vs 1 mismatches across devices
   const normalizedLevel = String(level ?? "").trim();
 
-  // DOM safety
   if (!document.getElementById("hintDisplay")) {
-    console.error("❌ #hintDisplay missing. Ensure your HTML has <p id=\"hintDisplay\"></p>");
+    console.error("❌ #hintDisplay missing in DOM.");
     return;
   }
 
@@ -63,29 +61,23 @@ export async function getHint(level) {
       return;
     }
 
-    // Read counters from Firestore
     const data = teamSnap.data() || {};
-    const hintsUsed = Number(data.hintsUsed || 0);          // global counter (0..3)
-    const hintUsedLevels = Array.isArray(data.hintUsedLevels)
+    let hintsUsed = Number(data.hintsUsed || 0);
+    let hintUsedLevels = Array.isArray(data.hintUsedLevels)
       ? data.hintUsedLevels.map(String)
       : [];
 
-    // If this level already consumed a hint → just re-show without counting
-    if (normalizedLevel && hintUsedLevels.includes(normalizedLevel)) {
-      const cachedHint = getHintFromLocalStorage();
-      if (cachedHint) {
-        setHintText(`💡 Hint: ${cachedHint}`);
-      } else {
-        // Fallback if local cache missing
-        setHintText("💡 Hint already used for this level.");
-      }
-      return;
-    }
-
-    // If global cap reached → block
+    // If global cap already reached → block
     if (hintsUsed >= 3) {
       setHintText("⚠️ You’ve already used all 3 hints for the game!");
       updateHintButtonDisabled(true);
+      return;
+    }
+
+    // If this level already consumed a hint → just re-show, do NOT increment
+    if (normalizedLevel && hintUsedLevels.includes(normalizedLevel)) {
+      const cachedHint = getHintFromLocalStorage();
+      setHintText(cachedHint ? `💡 Hint: ${cachedHint}` : "💡 Hint already used for this level.");
       return;
     }
 
@@ -96,22 +88,19 @@ export async function getHint(level) {
       return;
     }
 
-    // Show hint immediately for good UX
+    // Show immediately
     setHintText(`💡 Hint: ${hintText}`);
 
-    // Update Firestore: increment global counter and mark this level as used (no duplicates)
-    const newCount = hintsUsed + 1;
-    const newLevels = normalizedLevel
-      ? Array.from(new Set([...hintUsedLevels, normalizedLevel]))
-      : hintUsedLevels;
+    // ✅ Increment only once per new level
+    hintsUsed += 1;
+    hintUsedLevels = [...new Set([...hintUsedLevels, normalizedLevel])];
 
     await updateDoc(teamRef, {
-      hintsUsed: newCount,
-      hintUsedLevels: newLevels
+      hintsUsed,
+      hintUsedLevels
     });
 
-    // If this was the third hint, disable the button
-    if (newCount >= 3) updateHintButtonDisabled(true);
+    if (hintsUsed >= 3) updateHintButtonDisabled(true);
 
   } catch (err) {
     console.error("❌ Error fetching/updating hint:", err);
